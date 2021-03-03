@@ -4,6 +4,7 @@ import cvxopt
 class LogisticRegression():
     """
     Logistic Regression implementation
+    
     Usage:
     """
 

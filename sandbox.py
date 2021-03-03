@@ -6,6 +6,12 @@ Sandbox file to try things messily
 import numpy as np
 import pandas as pd
 
+from kernels import LinearKernel, GaussianKernel, PolynomialKernel
+
+from classifiers.logistic_regression import LogisticRegression
+from classifiers.ridge_regression import RidgeRegression
+from classifiers.svm import SVM
+
 # %% Read csv files
 # shape (2000,1): string
 X0_train = pd.read_csv("data/Xtr0.csv", sep=",", index_col=0).values
@@ -33,3 +39,9 @@ Y1_train = pd.read_csv("data/Ytr1.csv", sep=",", index_col=0).values
 Y2_train = pd.read_csv("data/Ytr2.csv", sep=",", index_col=0).values
 
 # %%
+kernel = LinearKernel()
+ridge = RidgeRegression(kernel=kernel, alpha=1)
+ridge.fit(X0_mat100_train, Y0_train)
+# %%
+ridge.predict(X0_mat100_train)
+

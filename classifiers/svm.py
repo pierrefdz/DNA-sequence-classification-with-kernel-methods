@@ -4,6 +4,7 @@ import cvxopt
 class SVM():
     """
     SVM implementation
+    
     Usage:
         svm = SVM(kernel='linear', C=1)
         svm.fit(X_train, y_train)
