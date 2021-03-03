@@ -1,3 +1,14 @@
+# GitHubs:
 https://github.com/francisanokye/DNA-Classification-Challenge-With-Kernel-Methods-AMMI-2020
 https://github.com/rmenegaux/kernels-AMMI-2020/tree/master/data-challenge
 https://github.com/omarfoq/Kernel_Methods_for_Machine_Learning
+https://github.com/PirashanthR/Kernel-Methods-For-Machine-Learning-MVA-Challenge
+
+# Kaggle link
+https://www.kaggle.com/c/machine-learning-with-kernel-methods-2021/overview
+
+# Overleaf Link
+https://www.overleaf.com/3252222329vvrqhthdgwmy
+
+# Tuto on ML for DNA sequences
+https://www.kaggle.com/thomasnelson/working-with-dna-sequence-data-for-ml
