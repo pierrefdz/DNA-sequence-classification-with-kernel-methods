@@ -5,6 +5,7 @@ Sandbox file to try things messily
 # %% Imports
 import numpy as np
 import pandas as pd
+from sklearn.kernel_ridge import KernelRidge
 
 from kernels import LinearKernel, GaussianKernel, PolynomialKernel
 
@@ -44,6 +45,11 @@ ridge = RidgeRegression(kernel=kernel, alpha=0.01)
 ridge.fit(X0_mat100_train, Y0_train)
 # %%
 ridge.predict(X0_mat100_train)
+
+# KRR with sklearn
+# ridge = KernelRidge(alpha=0.001, kernel='linear')
+# ridge.fit(X0_mat100_train, Y0_train2)
+# ridge.predict(X0_mat100_train)
 
 # Kernel logistic regression
 # logreg = LogisticRegression(kernel=kernel, lambda_=0.01)

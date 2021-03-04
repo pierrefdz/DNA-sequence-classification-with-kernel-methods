@@ -27,7 +27,7 @@ class LogisticRegression():
         self.X_train = X
         n_samples = X.shape[0]
         num_iter = 10
-        eps = 10 ** -6
+        eps = 1e-6
         K = self.kernel.gram(X)
 
         # Initialization
