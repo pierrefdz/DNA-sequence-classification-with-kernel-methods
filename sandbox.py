@@ -40,8 +40,13 @@ Y2_train = pd.read_csv("data/Ytr2.csv", sep=",", index_col=0).values
 
 # %%
 kernel = LinearKernel()
-ridge = RidgeRegression(kernel=kernel, alpha=1)
+ridge = RidgeRegression(kernel=kernel, alpha=0.01)
 ridge.fit(X0_mat100_train, Y0_train)
 # %%
 ridge.predict(X0_mat100_train)
 
+# Kernel logistic regression
+# logreg = LogisticRegression(kernel=kernel, lambda_=0.01)
+# Y0_train_scaled = np.where(Y0_train == 0, -1, 1)
+# logreg.fit(X0_mat100_train, Y0_train)
+# logreg.predict(X0_mat100_train)

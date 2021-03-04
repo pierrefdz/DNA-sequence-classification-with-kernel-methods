@@ -24,7 +24,7 @@ class RidgeRegression():
         self.X_train = X
         n_samples = X.shape[0]
         K = self.kernel.gram(X)
-        self.alphas = np.linalg.solve(K+self.alpha*np.eye(n_samples), y)
+        self.alphas = np.linalg.solve(K+n_samples*self.alpha*np.eye(n_samples), y)
         return self.alphas
 
     def predict(self, X):
