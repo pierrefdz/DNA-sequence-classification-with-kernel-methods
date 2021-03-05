@@ -65,3 +65,17 @@ class PolynomialKernel(Kernel):
         x, y: array (n_features,)
         """
         return (self.gamma * np.dot(x,y) + self.coef0)**self.degree
+
+
+class SpectrumKernel(Kernel):
+
+    def __init__(self, k):
+        super().__init__()
+        self.k = k
+
+    def similarity(self, x, y):
+        """ Spectrum kernel \\
+        x, y: string
+        """
+        substr_x, counts_x = np.unique([x[i:i+self.k] for i in range(len(x)-self.k+1)], return_counts=True)
+        return np.sum(np.char.count(y, substr_x)*counts_x)
