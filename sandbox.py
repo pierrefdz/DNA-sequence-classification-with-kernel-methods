@@ -113,6 +113,9 @@ if compare_svms:
     svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
     svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
 
+    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
+    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
+
     #My SVM
     print("Applying my SVM...")
     my_svm = SVM(kernel=LinearKernel(),C=100.0)
@@ -120,13 +123,11 @@ if compare_svms:
     my_svm_classes_train = my_svm.predict_classes(X_mat_train)
     my_svm_classes_val = my_svm.predict_classes(X_mat_val)
 
-
-    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
-    print("Accuracy on train (my SVM):", np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))
-    print("Similarity on train between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(svm_scikit_classes_train))/len(Y_train))
-
-    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
+    print("Accuracy on train (my SVM):", np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))    
     print("Accuracy on val (my SVM):", np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
+
+    #Comparison
+    print("Similarity on train between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(svm_scikit_classes_train))/len(Y_train))
     print("Similarity on val between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(svm_scikit_classes_val))/len(Y_val))
 
 
