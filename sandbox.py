@@ -62,33 +62,71 @@ ridge.predict(X0_mat100_train)
 
 """
 
-Y0_train_scaled = np.where(Y0_train == 0, -1, 1)
+## Preprocessing
+
+split_ratio = 0.8
+shuffle = True
+rescale_y = True
+
+#Stack the data
+X_mat_train_full = np.vstack((X0_mat100_train,X1_mat100_train,X2_mat100_train))
+Y_train_full = np.vstack((Y0_train,Y1_train,Y2_train))
+
+if rescale_y:
+    Y_train_full = np.where(Y_train_full == 0, -1, 1)
+
+#Shuffle the data
+if shuffle:
+    shuffling = np.random.permutation(len(X_mat_train_full))
+    X_mat_train_full = X_mat_train_full[shuffling]
+    Y_train_full = Y_train_full[shuffling]
+
+#Split the data into 
+nb_in_train = int(split_ratio*len(X_mat_train_full))
+X_mat_train,X_mat_val = X_mat_train_full[:nb_in_train],X_mat_train_full[nb_in_train:]
+Y_train,Y_val = Y_train_full[:nb_in_train],Y_train_full[nb_in_train:]
+
 
 print("Real classes distribution:")
+print(len(Y_train_full), "samples")
+print(np.sum(Y_train_full== 1), "positive")
+print(np.sum(Y_train_full==-1), "negative")
 
-print(len(Y0_train_scaled), "samples")
-print(np.sum(Y0_train_scaled== 1), "positive")
-print(np.sum(Y0_train_scaled==-1), "negative")
+print("Training classes distribution:")
+print(len(Y_train), "samples")
+print(np.sum(Y_train== 1), "positive")
+print(np.sum(Y_train==-1), "negative")
+
+print("Validation classes distribution:")
+print(len(Y_val), "samples")
+print(np.sum(Y_val== 1), "positive")
+print(np.sum(Y_val==-1), "negative")
 
 compare_svms = True
 
 if compare_svms:
 
     #Sklearn SVM
+    print("Applying Sklearn SVM...")
     svm_scikit = SVC(C=100.0,kernel='linear')
-    svm_scikit.fit(X0_mat100_train, Y0_train_scaled)
-    svm_scikit_classes = svm_scikit.predict(X0_mat100_train)
+    svm_scikit.fit(X_mat_train, Y_train)
+    svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
+    svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
 
     #My SVM
+    print("Applying my SVM...")
     my_svm = SVM(kernel=LinearKernel(),C=100.0)
-    my_svm.fit(X0_mat100_train, Y0_train_scaled)
+    my_svm.fit(X_mat_train, Y_train)
+    my_svm_classes_train = my_svm.predict_classes(X_mat_train)
+    my_svm_classes_val = my_svm.predict_classes(X_mat_val)
 
-    y_pred = my_svm.predict(X0_mat100_train)
-    y_classes_pred = my_svm.predict_classes(X0_mat100_train)
 
+    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
+    print("Accuracy on train (my SVM):", np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))
+    print("Similarity on train between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(svm_scikit_classes_train))/len(Y_train))
 
-    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes==np.squeeze(Y0_train_scaled))/len(Y0_train_scaled))
-    print("Accuracy on train (my SVM):", np.sum(np.squeeze(y_classes_pred)==np.squeeze(Y0_train_scaled))/len(Y0_train_scaled))
-    print("Similarity between sklearn SVM and my SVM:",np.sum(np.squeeze(y_classes_pred)==np.squeeze(svm_scikit_classes))/len(Y0_train_scaled))
+    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
+    print("Accuracy on val (my SVM):", np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
+    print("Similarity on val between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(svm_scikit_classes_val))/len(Y_val))
 
 
