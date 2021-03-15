@@ -13,12 +13,15 @@ class SVM():
         svm.predict(X_test)
     """
 
-    def __init__(self, kernel, C=1.0):
+    def __init__(self, kernel, C=1.0, tol_support_vectors=1e-4):
         """
+        kernel: Which kernel to use
         C: float > 0, default=1.0, regularization parameter
+        tol_support_vectors: Threshold to consider vectors as support vectors
         """
         self.kernel = kernel
         self.C = C
+        self.tol_support_vectors = tol_support_vectors
 
     def fit(self, X, y):
 
@@ -64,7 +67,7 @@ class SVM():
         """
 
         #Retrieve the support vectors
-        self.support_vectors_indices = np.squeeze(np.abs(np.array(x))) > 1e-4
+        self.support_vectors_indices = np.squeeze(np.abs(np.array(x))) > self.tol_support_vectors
         self.alphas = self.alphas[self.support_vectors_indices]
         self.support_vectors = self.X_train[self.support_vectors_indices]
 

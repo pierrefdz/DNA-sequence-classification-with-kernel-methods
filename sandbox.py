@@ -64,7 +64,7 @@ ridge.predict(X0_mat100_train)
 
 ## Preprocessing
 
-fraction_of_data = 0.3 #Put a small value for faster tests
+fraction_of_data = 1.0 #Put a small value for faster tests
 split_ratio = 0.8 #Ratio of data in train set
 shuffle = True #Shuffle the data
 rescale_y = True #Rescale labels to -1 and 1
@@ -97,28 +97,92 @@ print("Real classes distribution:")
 print(len(Y_train_full), "samples")
 print(np.sum(Y_train_full== 1), "positive")
 print(np.sum(Y_train_full==-1), "negative")
+print()
 
 print("Training classes distribution:")
 print(len(Y_train), "samples")
 print(np.sum(Y_train== 1), "positive")
 print(np.sum(Y_train==-1), "negative")
+print()
 
 print("Validation classes distribution:")
 print(len(Y_val), "samples")
 print(np.sum(Y_val== 1), "positive")
 print(np.sum(Y_val==-1), "negative")
+print()
 
-compare_both_svms = True
+compare_both_svms = False
 test_scikit_svm = False
 test_my_svm = False
+grid_search_SVM = True
 
 
 if compare_both_svms:
 
     #Parameters
-    kernel = 'rbf' # 'linear' or 'rbf' for the moment
-    C = 100.0
+    kernel = 'poly' # 'linear' 'rbf' or 'poly'
+    C = 1.0
     gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
+    coef0 = 1.0
+    degree = 3
+
+    print("Kernel:", kernel)
+    print("C:", C)
+    if kernel != 'linear':
+        print("Gamma:", gamma)
+    if kernel == 'poly':
+        print("Coef0:", coef0)
+        print("Degree:", degree)
+    print()
+
+    #Sklearn SVM
+    print("Applying Sklearn SVM...")
+    svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma,coef0=coef0,degree=degree)
+    svm_scikit.fit(X_mat_train, np.squeeze(Y_train))
+    svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
+    svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
+
+    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
+    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
+    print()
+
+    #My SVM
+    print("Applying my SVM...")
+    if kernel=='linear':
+        my_svm = SVM(kernel=LinearKernel(),C=C)
+    elif kernel=='rbf':
+        my_svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
+    elif kernel=='poly':
+        my_svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
+    my_svm.fit(X_mat_train, Y_train)
+    my_svm_classes_train = my_svm.predict_classes(X_mat_train)
+    my_svm_classes_val = my_svm.predict_classes(X_mat_val)
+
+    print("Accuracy on train (my SVM):", np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))    
+    print("Accuracy on val (my SVM):", np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
+    print()
+
+    #Comparison
+    print("Similarity on train between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(svm_scikit_classes_train))/len(Y_train))
+    print("Similarity on val between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(svm_scikit_classes_val))/len(Y_val))
+    print()
+
+
+if test_scikit_svm:
+
+    #Parameters
+    kernel = 'rbf'
+    C = 1000.0
+    gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
+
+    print("Kernel:", kernel)
+    print("C:", C)
+    if kernel != 'linear':
+        print("Gamma:", gamma)
+    if kernel == 'poly':
+        print("Coef0:", coef0)
+        print("Degree:", degree)
+    print()
 
     #Sklearn SVM
     print("Applying Sklearn SVM...")
@@ -130,51 +194,21 @@ if compare_both_svms:
     print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
     print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
 
-    #My SVM
-    print("Applying my SVM...")
-    if kernel=='linear':
-        my_svm = SVM(kernel=LinearKernel(),C=C)
-    elif kernel=='rbf':
-        my_svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
-    my_svm.fit(X_mat_train, Y_train)
-    my_svm_classes_train = my_svm.predict_classes(X_mat_train)
-    my_svm_classes_val = my_svm.predict_classes(X_mat_val)
-
-    print("Accuracy on train (my SVM):", np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))    
-    print("Accuracy on val (my SVM):", np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
-
-    #Comparison
-    print("Similarity on train between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(svm_scikit_classes_train))/len(Y_train))
-    print("Similarity on val between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(svm_scikit_classes_val))/len(Y_val))
-
-
-if test_scikit_svm:
-
-    #Parameters
-    kernel = 'rbf'
-    C = 1.0
-    gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
-
-    print(gamma)
-
-    #Sklearn SVM
-    print("Applying Sklearn SVM...")
-    svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma)
-    svm_scikit.fit(X_mat_train, Y_train)
-    svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
-    svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
-
-    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
-    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
-
 if test_my_svm:
 
     #Parameters
     kernel = 'rbf'
-    C = 1.0
+    C = 10.0
     gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
 
-    print("Gamma:", gamma)
+    print("Kernel:", kernel)
+    print("C:", C)
+    if kernel != 'linear':
+        print("Gamma:", gamma)
+    if kernel == 'poly':
+        print("Coef0:", coef0)
+        print("Degree:", degree)
+    print()
 
     #My SVM
     print("Applying my SVM...")
@@ -191,8 +225,74 @@ if test_my_svm:
 
 
 
+if grid_search_SVM:
 
+    max_val_acc = 0
+    max_C = 0
+    max_gamma = 0
 
+    kernels = ['linear','rbf','poly']
+    Cs = [10**i for i in range(0,3)]
+    gammas = [10**i for i in range(0,4)]
+    coef0s = [1.0]
+    degrees = [2,3,4,5]
+
+    for kernel in kernels:
+        for C in Cs:
+            for gamma in gammas:
+                for coef0 in coef0s:
+                    for degree in degrees:
+
+                        print("Kernel:", kernel)
+                        print("C:", C)
+                        if kernel != 'linear':
+                            print("Gamma:", gamma)
+                        if kernel == 'poly':
+                            print("Coef0:", coef0)
+                            print("Degree:", degree)
+                        print()
+
+                        try:
+
+                            #Sklearn SVM
+                            print("Applying Sklearn SVM...")
+                            svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma,coef0=coef0,degree=degree)
+                            svm_scikit.fit(X_mat_train, np.squeeze(Y_train))
+                            svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
+                            svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
+
+                            acc_train = np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train)
+                            acc_val = np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val)
+
+                            print("Accuracy on train (sklearn SVM):", acc_train)
+                            print("Accuracy on val (sklearn SVM):", acc_val)
+                            print()
+
+                            if acc_val > max_val_acc:
+                                max_val_acc = acc_val
+                                max_C = C
+                                max_gamma = gamma
+                                max_kernel = kernel
+                                max_degree = degree
+                                max_coef0 = coef0
+                        
+                        except:
+                            print("Error when applying SVM. Resume with next parameters...")
+                            print()
+
+                        if kernel!='poly':
+                            break
+                    if kernel!='poly':
+                        break
+                if kernel == 'linear':
+                    break
+
+    print("Best val acc:",max_val_acc)
+    print("Best kernel:",kernel)
+    print("Best C:",max_C)
+    print("Best gamma:", max_gamma)
+    print("Best degree:", max_degree)
+    print("Best coef0:", max_coef0)
 
 
 
