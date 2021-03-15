@@ -40,16 +40,21 @@ class LinearKernel(Kernel):
 
 class GaussianKernel(Kernel):
 
-    def __init__(self, sigma):
+    def __init__(self, sigma,normalize=True):
         super().__init__()
         self.sigma = sigma
+        self.normalize = normalize
 
     def similarity(self, x, y):
         """ gaussian kernel : k(x,y) = 1/ sqrt(2 pi sigma2)^n * exp( - ||x-y||^2 / 2 sigma^2 )\\
         x, y: array (n_features,)
         """
-        norm_fact = (np.sqrt(2 * np.pi) * self.sigma) ** len(x)
-        return np.exp(-np.linalg.norm(x-y)**2 / (2 * self.sigma**2)) / norm_fact
+
+        if self.normalize:
+            norm_fact = (np.sqrt(2 * np.pi) * self.sigma) ** len(x)
+            return np.exp(-np.linalg.norm(x-y)**2 / (2 * self.sigma**2)) / norm_fact
+        else:
+            return np.exp(-np.linalg.norm(x-y)**2 / (2 * self.sigma**2))
 
 
 class PolynomialKernel(Kernel):

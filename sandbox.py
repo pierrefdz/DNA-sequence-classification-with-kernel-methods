@@ -64,9 +64,10 @@ ridge.predict(X0_mat100_train)
 
 ## Preprocessing
 
-split_ratio = 0.8
-shuffle = True
-rescale_y = True
+fraction_of_data = 0.3 #Put a small value for faster tests
+split_ratio = 0.8 #Ratio of data in train set
+shuffle = True #Shuffle the data
+rescale_y = True #Rescale labels to -1 and 1
 
 #Stack the data
 X_mat_train_full = np.vstack((X0_mat100_train,X1_mat100_train,X2_mat100_train))
@@ -81,7 +82,12 @@ if shuffle:
     X_mat_train_full = X_mat_train_full[shuffling]
     Y_train_full = Y_train_full[shuffling]
 
-#Split the data into 
+#Take a fraction of the data
+nb_samples = int(fraction_of_data*len(X_mat_train_full))
+X_mat_train_full = X_mat_train_full[:nb_samples]
+Y_train_full = Y_train_full[:nb_samples]
+
+#Split the data into train and val
 nb_in_train = int(split_ratio*len(X_mat_train_full))
 X_mat_train,X_mat_val = X_mat_train_full[:nb_in_train],X_mat_train_full[nb_in_train:]
 Y_train,Y_val = Y_train_full[:nb_in_train],Y_train_full[nb_in_train:]
@@ -102,14 +108,22 @@ print(len(Y_val), "samples")
 print(np.sum(Y_val== 1), "positive")
 print(np.sum(Y_val==-1), "negative")
 
-compare_svms = True
+compare_both_svms = True
+test_scikit_svm = False
+test_my_svm = False
 
-if compare_svms:
+
+if compare_both_svms:
+
+    #Parameters
+    kernel = 'rbf' # 'linear' or 'rbf' for the moment
+    C = 100.0
+    gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
 
     #Sklearn SVM
     print("Applying Sklearn SVM...")
-    svm_scikit = SVC(C=100.0,kernel='linear')
-    svm_scikit.fit(X_mat_train, Y_train)
+    svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma)
+    svm_scikit.fit(X_mat_train, np.squeeze(Y_train))
     svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
     svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
 
@@ -118,7 +132,10 @@ if compare_svms:
 
     #My SVM
     print("Applying my SVM...")
-    my_svm = SVM(kernel=LinearKernel(),C=100.0)
+    if kernel=='linear':
+        my_svm = SVM(kernel=LinearKernel(),C=C)
+    elif kernel=='rbf':
+        my_svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
     my_svm.fit(X_mat_train, Y_train)
     my_svm_classes_train = my_svm.predict_classes(X_mat_train)
     my_svm_classes_val = my_svm.predict_classes(X_mat_val)
@@ -129,5 +146,53 @@ if compare_svms:
     #Comparison
     print("Similarity on train between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(svm_scikit_classes_train))/len(Y_train))
     print("Similarity on val between sklearn SVM and my SVM:",np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(svm_scikit_classes_val))/len(Y_val))
+
+
+if test_scikit_svm:
+
+    #Parameters
+    kernel = 'rbf'
+    C = 1.0
+    gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
+
+    print(gamma)
+
+    #Sklearn SVM
+    print("Applying Sklearn SVM...")
+    svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma)
+    svm_scikit.fit(X_mat_train, Y_train)
+    svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
+    svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
+
+    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
+    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
+
+if test_my_svm:
+
+    #Parameters
+    kernel = 'rbf'
+    C = 1.0
+    gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
+
+    print("Gamma:", gamma)
+
+    #My SVM
+    print("Applying my SVM...")
+    if kernel=='linear':
+        my_svm = SVM(kernel=LinearKernel(),C=C)
+    elif kernel=='rbf':
+        my_svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
+    my_svm.fit(X_mat_train, Y_train)
+    my_svm_classes_train = my_svm.predict_classes(X_mat_train)
+    my_svm_classes_val = my_svm.predict_classes(X_mat_val)
+
+    print("Accuracy on train (my SVM):", np.sum(np.squeeze(my_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))    
+    print("Accuracy on val (my SVM):", np.sum(np.squeeze(my_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
+
+
+
+
+
+
 
 

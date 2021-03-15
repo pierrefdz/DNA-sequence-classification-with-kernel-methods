@@ -24,12 +24,20 @@ class SVM():
 
         self.X_train = X
         n_samples = X.shape[0]
+        print("Computing the kernel...")
         self.X_train_gram = self.kernel.gram(X)
+        print("Done!")
 
         #Define the optimization problem to solve
-        P = (y @ y.T) * self.X_train_gram
-        q = -np.ones(n_samples)
-        G = np.block([[np.eye(n_samples)],[-np.eye(n_samples)]])
+
+        #P = (y @ y.T) * self.X_train_gram
+        #q = -np.ones(n_samples)
+        #G = np.block([[np.eye(n_samples)],[-np.eye(n_samples)]])
+        #h = np.concatenate((self.C*np.ones(n_samples),np.zeros(n_samples)))
+
+        P = self.X_train_gram
+        q = -y.astype('float')
+        G = np.block([[np.diag(np.squeeze(y).astype('float'))],[-np.diag(np.squeeze(y).astype('float'))]])
         h = np.concatenate((self.C*np.ones(n_samples),np.zeros(n_samples)))
 
         #Solve the problem
@@ -41,7 +49,8 @@ class SVM():
         h=matrix(h)
         solver = cvxopt.solvers.qp(P=P,q=q,G=G,h=h)
         x = solver['x']
-        self.alphas = np.squeeze(y)*np.squeeze(np.array(x))
+        #self.alphas = np.squeeze(y)*np.squeeze(np.array(x))
+        self.alphas = np.squeeze(np.array(x))
         
         """
         #With cvxpy
@@ -55,7 +64,7 @@ class SVM():
         """
 
         #Retrieve the support vectors
-        self.support_vectors_indices = np.squeeze(np.array(x)) > 1e-4
+        self.support_vectors_indices = np.squeeze(np.abs(np.array(x))) > 1e-4
         self.alphas = self.alphas[self.support_vectors_indices]
         self.support_vectors = self.X_train[self.support_vectors_indices]
 
