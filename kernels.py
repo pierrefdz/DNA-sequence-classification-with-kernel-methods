@@ -84,3 +84,26 @@ class SpectrumKernel(Kernel):
         """
         substr_x, counts_x = np.unique([x[i:i+self.k] for i in range(len(x)-self.k+1)], return_counts=True)
         return np.sum(np.char.count(y, substr_x)*counts_x)
+
+
+class MismatchKernel(Kernel):
+
+    def __init__(self, k, m):
+        super().__init__()
+        self.k = k
+        self.m = m
+
+    def similarity(self, x, y):
+        """ Mismatch kernel \\
+        x, y: string
+        """
+        substr_x = [c for c in x]
+        substr_x = np.array([substr_x[i:i + self.k] for i in range(len(x) - self.k + 1)])
+
+        substr_y = [c for c in y]
+        substr_y = np.array([substr_y[i:i + self.k] for i in range(len(y) - self.k + 1)])
+
+        sp = 0
+        for i in range(len(substr_x)):
+            sp += np.sum(np.sum(substr_x[i] != substr_y, axis=1) <= self.m)
+        return sp
