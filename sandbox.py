@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVC
 
-from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel
+from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel
 
 from classifiers.logistic_regression import LogisticRegression
 from classifiers.ridge_regression import RidgeRegression
@@ -120,6 +120,7 @@ test_scikit_svm = False
 test_our_svm = False
 grid_search_SVM = False
 test_spectrum = True
+test_mismatch = False
 
 
 if compare_both_svms:
@@ -340,4 +341,92 @@ if test_spectrum:
     print("Accuracy on val (our SVM):", np.sum(np.squeeze(our_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
 
 
+if test_mismatch:
 
+    def create_kmer_set(X, k, kmer_set={}):
+        """
+        Return a set of all kmers appearing in the dataset.
+        """
+        len_seq = len(X[0])
+        idx = len(kmer_set)
+        for i in range(len(X)):
+            x = X[i]
+            kmer_x = [x[i:i + k] for i in range(len_seq - k + 1)]
+            for kmer in kmer_x:
+                if kmer not in kmer_set:
+                    kmer_set[kmer] = idx
+                    idx += 1
+        return kmer_set
+
+
+    def m_neighbours(kmer, m, recurs=0):
+        """
+        Return a list of neighbours kmers (up to m mismatches).
+        """
+        if m == 0:
+            return [kmer]
+
+        letters = ['G', 'T', 'A', 'C']
+        k = len(kmer)
+        neighbours = m_neighbours(kmer, m - 1, recurs + 1)
+
+        for j in range(len(neighbours)):
+            neighbour = neighbours[j]
+            for i in range(recurs, k - m + 1):
+                for l in letters:
+                    neighbours.append(neighbour[:i] + l + neighbour[i + 1:])
+        return list(set(neighbours))
+
+
+    def get_neighbours(kmer_set, m):
+        """
+        Find the neighbours given a set of kmers.
+        """
+        kmers_list = list(kmer_set.keys())
+        kmers = np.array(list(map(list, kmers_list)))
+        num_kmers, kmax = kmers.shape
+        neighbours = {}
+        for i in range(num_kmers):
+            neighbours[kmers_list[i]] = []
+
+        for i in range(num_kmers):
+            kmer = kmers_list[i]
+            kmer_neighbours = m_neighbours(kmer, m)
+            for neighbour in kmer_neighbours:
+                if neighbour in kmer_set:
+                    neighbours[kmer].append(neighbour)
+        return neighbours
+
+
+    def embed_data(X, neighbours, kmer_set):
+        """
+        Embed data.
+        """
+        X_emb = [{} for i in range(len(X))]
+        for i in range(len(X)):
+            x = X[i]
+            kmer_x = [x[j:j + k] for j in range(len(X[0]) - k + 1)]
+            for kmer in kmer_x:
+                neigh_kmer = neighbours[kmer]
+                for neigh in neigh_kmer:
+                    idx_neigh = kmer_set[neigh]
+                    if idx_neigh in X_emb[i]:
+                        X_emb[i][idx_neigh] += 1
+                    else:
+                        X_emb[i][idx_neigh] = 1
+        return X_emb
+
+    k = 12
+    m = 2
+
+    kmer_set = create_kmer_set(X0_train[:,0], k)
+    # kmer_set = create_kmer_set(X1_train[:,0], k, kmer_set)
+    # kmer_set = create_kmer_set(X2_train[:,0], k, kmer_set)
+
+    neighbours = get_neighbours(kmer_set, m)
+
+    X_emb = embed_data(X, neighbours, kmer_set)
+
+    mismatch_kernel = MismatchKernel(k, m)
+
+    G = mismatch_kernel.gram(np.array(X_emb))

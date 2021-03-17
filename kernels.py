@@ -93,17 +93,27 @@ class MismatchKernel(Kernel):
         self.k = k
         self.m = m
 
+#     def similarity(self, x, y):
+#         """ Mismatch kernel \\
+#         x, y: string
+#         """
+#         substr_x = [c for c in x]
+#         substr_x = np.array([substr_x[i:i + self.k] for i in range(len(x) - self.k + 1)])
+#
+#         substr_y = [c for c in y]
+#         substr_y = np.array([substr_y[i:i + self.k] for i in range(len(y) - self.k + 1)])
+#
+#         sp = 0
+#         for i in range(len(substr_x)):
+#             sp += np.sum(np.sum(substr_x[i] != substr_y, axis=1) <= self.m)
+#         return sp
+
     def similarity(self, x, y):
         """ Mismatch kernel \\
-        x, y: string
+        x, y: dict
         """
-        substr_x = [c for c in x]
-        substr_x = np.array([substr_x[i:i + self.k] for i in range(len(x) - self.k + 1)])
-
-        substr_y = [c for c in y]
-        substr_y = np.array([substr_y[i:i + self.k] for i in range(len(y) - self.k + 1)])
-
         sp = 0
-        for i in range(len(substr_x)):
-            sp += np.sum(np.sum(substr_x[i] != substr_y, axis=1) <= self.m)
+        for idx_neigh in x:
+            if idx_neigh in y:
+                sp += x[idx_neigh] * y[idx_neigh]
         return sp
