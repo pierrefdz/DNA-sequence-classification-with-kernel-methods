@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.sparse as sparse
 
 class Kernel():
     """ Abstract Kernel class"""
@@ -117,3 +118,37 @@ class MismatchKernel(Kernel):
             if idx_neigh in y:
                 sp += x[idx_neigh] * y[idx_neigh]
         return sp
+
+    def gram(self, X1, X2=None):
+        """ Compute the gram matrix of a data vector X where the (i,j) entry is defined as <Xi,Xj>\\
+        X1: data vector (n_samples_1 x embed dict)
+        X2: data vector (n_samples_2 x embed_dict), if None compute the gram matrix for (X1,X1)
+        """
+
+        def to_sparse(X):
+            data, row, col = [], [], []
+            for i in range(len(X)):
+                x = X[i]
+                data += list(x.values())
+                row += list(x.keys())
+                col += [i for j in range(len(x))]
+            X_sm = sparse.coo_matrix((data, (row, col)))
+            return X_sm
+
+        X1_sm = to_sparse(X1)
+        if X2 is None:
+            X2_sm = X1_sm
+        else:
+            X2_sm = to_sparse(X2)
+
+            # Reshape matrices if the sizes are different
+            nadd_row = abs(X1_sm.shape[0] - X2_sm.shape[0])
+            if X1_sm.shape[0] > X2_sm.shape[0]:
+                add_row = sparse.coo_matrix(([0], ([nadd_row-1], [X2_sm.shape[1]-1])))
+                X2_sm = sparse.vstack((X2_sm, add_row))
+            elif X1_sm.shape[0] < X2_sm.shape[0]:
+                add_row = sparse.coo_matrix(([0], ([nadd_row - 1], [X1_sm.shape[1] - 1])))
+                X1_sm = sparse.vstack((X1_sm, add_row))
+
+        G = (X1_sm.T * X2_sm).todense()
+        return G
