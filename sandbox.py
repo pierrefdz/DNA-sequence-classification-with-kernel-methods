@@ -6,6 +6,8 @@ Sandbox file to try things messily
 import numpy as np
 import pandas as pd
 import pickle
+from tqdm import tqdm
+
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVC
 
@@ -120,8 +122,8 @@ compare_both_svms = False
 test_scikit_svm = False
 test_our_svm = False
 grid_search_SVM = False
-test_spectrum = True
-test_mismatch = False
+test_spectrum = False
+test_mismatch = True
 
 
 if compare_both_svms:
@@ -390,7 +392,7 @@ if test_mismatch:
         for i in range(num_kmers):
             neighbours[kmers_list[i]] = []
 
-        for i in range(num_kmers):
+        for i in tqdm(range(num_kmers)):
             kmer = kmers_list[i]
             kmer_neighbours = m_neighbours(kmer, m)
             for neighbour in kmer_neighbours:
@@ -401,29 +403,41 @@ if test_mismatch:
     k = 12
     m = 2
 
-    X_train = np.concatenate([X0_train, X1_train, X2_train], axis=0)
-    X_test = np.concatenate([X0_test, X1_test, X2_test], axis=0)
-    Y_train = np.concatenate([Y0_train, Y1_train, Y2_train], axis=0)
-    Y_train = np.where(Y == 0, -1, 1)
-
-    kmer_set = create_kmer_set(X_train[:,0], k)
-    kmer_set = create_kmer_set(X_test[:,0], k, kmer_set)
+    print('Creating kmers')
+    kmer_set = create_kmer_set(X0_train[:,0], k)
+    kmer_set = create_kmer_set(X0_test[:,0], k, kmer_set)
     
+    print('Creating kmers neighbors')
     neighbours = get_neighbours(kmer_set, m)
     
     # Save neighbours
-    # pickle.dump(neighbours, open('neighbours.p', 'wb'))
+    pickle.dump(neighbours, open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'wb'))
 
-    C = 0.1
+    print('Doing SVM')
+    C = 1
     svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set), C=C)
-    svm.fit(X_train[:,0], Y)
     
+    X0_train, X0_val = X0_train[:1600], X0_train[1600:]
+
+    Y0_train = np.where(Y0_train == 0, -1, 1)
+    Y0_train, Y0_val = Y0_train[:1600], Y0_train[1600:]
+
+    svm.fit(X0_train[:,0], Y0_train)
+
+    pred_train = svm.predict_classes(X0_train[:,0])
+    # pred = np.where(pred == -1, 0, 1) 
+    print( np.sum(np.squeeze(pred_train)==np.squeeze(Y0_train)) / len(Y0_train) )
+    
+    pred_val = svm.predict_classes(X0_val[:,0])
+    # pred = np.where(pred == -1, 0, 1)
+    print( np.sum(np.squeeze(pred_val)==np.squeeze(Y0_val)) / len(Y0_val) )
+
     # Create submission file
-    pred = svm.predict_classes(X_test[:,0])
-    pred = np.where(pred == -1, 0, 1)
-    pred_df = pd.DataFrame()
-    pred_df['Bound'] = pred[0]
-    pred_df.index.name = 'Id'
+    # pred = svm.predict_classes(X_test[:,0])
+    # pred = np.where(pred == -1, 0, 1)
+    # pred_df = pd.DataFrame()
+    # pred_df['Bound'] = pred[0]
+    # pred_df.index.name = 'Id'
 #     pred_df.to_csv('pred.csv', sep=',', header=True)
     
     
