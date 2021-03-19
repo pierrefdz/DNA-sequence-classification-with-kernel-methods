@@ -5,6 +5,7 @@ Sandbox file to try things messily
 # %% Imports
 import numpy as np
 import pandas as pd
+import pickle
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVC
 
@@ -419,14 +420,33 @@ if test_mismatch:
     k = 12
     m = 2
 
-    kmer_set = create_kmer_set(X0_train[:,0], k)
-    # kmer_set = create_kmer_set(X1_train[:,0], k, kmer_set)
-    # kmer_set = create_kmer_set(X2_train[:,0], k, kmer_set)
+    X_train = np.concatenate([X0_train, X1_train, X2_train], axis=0)
+    X_test = np.concatenate([X0_test, X1_test, X2_test], axis=0)
+    Y_train = np.concatenate([Y0_train, Y1_train, Y2_train], axis=0)
+    Y_train = np.where(Y == 0, -1, 1)
 
+    kmer_set = create_kmer_set(X_train[:,0], k)
+    kmer_set = create_kmer_set(X_test[:,0], k, kmer_set)
+    
     neighbours = get_neighbours(kmer_set, m)
+    
+    # Save neighbours
+    # pickle.dump(neighbours, open('neighbours.p', 'wb'))
+    
+    X_emb = embed_data(X_train[:,0], neighbours, kmer_set)
+    X_test_emb = embed_data(X_train[:,0], neighbours, kmer_set)
 
-    X_emb = embed_data(X, neighbours, kmer_set)
-
-    mismatch_kernel = MismatchKernel(k, m)
-
-    G = mismatch_kernel.gram(np.array(X_emb))
+    C = 0.1
+    svm = SVM(kernel=MismatchKernel(k=k,m=m), C=C)
+    svm.fit(np.array(X_emb), Y)
+    
+    # Create submission file
+    pred = svm.predict_classes(X_test_emb)
+    pred = np.where(pred == -1, 0, 1)
+    pred_df = pd.DataFrame()
+    pred_df['Bound'] = pred[0]
+    pred_df.index.name = 'Id'
+#     pred_df.to_csv('pred.csv', sep=',', header=True)
+    
+    
+    

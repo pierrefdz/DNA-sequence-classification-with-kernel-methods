@@ -150,5 +150,5 @@ class MismatchKernel(Kernel):
                 add_row = sparse.coo_matrix(([0], ([nadd_row - 1], [X1_sm.shape[1] - 1])))
                 X1_sm = sparse.vstack((X1_sm, add_row))
 
-        G = (X1_sm.T * X2_sm).todense()
+        G = (X1_sm.T * X2_sm).todense().astype('float')
         return G
