@@ -159,12 +159,26 @@ class MismatchKernel(Kernel):
 
     def similarity(self, x, y):
         """ Mismatch kernel \\
-        x, y: dict
+        x, y: string
         """
+        kmer_x = [x[j:j + self.k] for j in range(len(x) - self.k + 1)]
+        x_emb = {}
+        for kmer in kmer_x:
+            neigh_kmer = self.neighbours[kmer]
+            for neigh in neigh_kmer:
+                idx_neigh = self.kmer_set[neigh]
+                if idx_neigh in x_emb:
+                    x_emb[idx_neigh] += 1
+                else:
+                    x_emb[idx_neigh] = 1
+        kmer_y = [y[j:j + self.k] for j in range(len(y) - self.k + 1)]
+        y_emb = {}
+        for kmer in kmer_y:
+            y_emb[self.kmer_set[kmer]] = 1
         sp = 0
-        for idx_neigh in x:
-            if idx_neigh in y:
-                sp += x[idx_neigh] * y[idx_neigh]
+        for idx_neigh in x_emb:
+            if idx_neigh in y_emb:
+                sp += x_emb[idx_neigh] * y_emb[idx_neigh]
         return sp
 
     def gram(self, X1, X2=None):
@@ -174,12 +188,12 @@ class MismatchKernel(Kernel):
         """
         
         X1_emb = self.neighbour_embed_data(X1)
-        X1_sm = self.to_sparse(X1)
+        X1_sm = self.to_sparse(X1_emb)
         
         if X2 is None:
             X2 = X1
         X2_emb = self.one_hot_embed_data(X2)
-        X2_sm = self.to_sparse(X2)
+        X2_sm = self.to_sparse(X2_emb)
 
         # Reshape matrices if the sizes are different
         nadd_row = abs(X1_sm.shape[0] - X2_sm.shape[0])
