@@ -174,12 +174,12 @@ class MismatchKernel(Kernel):
         """
         
         X1_emb = self.neighbour_embed_data(X1)
-        X1_sm = to_sparse(X1)
+        X1_sm = self.to_sparse(X1)
         
         if X2 is None:
             X2 = X1
         X2_emb = self.one_hot_embed_data(X2)
-        X2_sm = to_sparse(X2)
+        X2_sm = self.to_sparse(X2)
 
         # Reshape matrices if the sizes are different
         nadd_row = abs(X1_sm.shape[0] - X2_sm.shape[0])

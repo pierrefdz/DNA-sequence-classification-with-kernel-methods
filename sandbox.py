@@ -403,15 +403,18 @@ if test_mismatch:
     k = 12
     m = 2
 
-    print('Creating kmers')
-    kmer_set = create_kmer_set(X0_train[:,0], k)
-    kmer_set = create_kmer_set(X0_test[:,0], k, kmer_set)
-    
-    print('Creating kmers neighbors')
-    neighbours = get_neighbours(kmer_set, m)
-    
-    # Save neighbours
-    pickle.dump(neighbours, open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'wb'))
+    try:
+        # Load
+        neighbours, kmer_set = pickle.load(open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'rb'))
+        print('Neighbors correctly loaded')
+    except:
+        print('No file found, creating kmers neighbors')
+        kmer_set = create_kmer_set(X0_train[:,0], k)
+        kmer_set = create_kmer_set(X0_test[:,0], k, kmer_set)
+        neighbours = get_neighbours(kmer_set, m)
+        
+        # Save neighbours and kmer set
+        pickle.dump([neighbours, kmer_set], open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'wb'))
 
     print('Doing SVM')
     C = 1
