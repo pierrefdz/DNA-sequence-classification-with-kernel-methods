@@ -398,25 +398,6 @@ if test_mismatch:
                     neighbours[kmer].append(neighbour)
         return neighbours
 
-
-    def embed_data(X, neighbours, kmer_set):
-        """
-        Embed data.
-        """
-        X_emb = [{} for i in range(len(X))]
-        for i in range(len(X)):
-            x = X[i]
-            kmer_x = [x[j:j + k] for j in range(len(X[0]) - k + 1)]
-            for kmer in kmer_x:
-                neigh_kmer = neighbours[kmer]
-                for neigh in neigh_kmer:
-                    idx_neigh = kmer_set[neigh]
-                    if idx_neigh in X_emb[i]:
-                        X_emb[i][idx_neigh] += 1
-                    else:
-                        X_emb[i][idx_neigh] = 1
-        return X_emb
-
     k = 12
     m = 2
 
@@ -432,16 +413,13 @@ if test_mismatch:
     
     # Save neighbours
     # pickle.dump(neighbours, open('neighbours.p', 'wb'))
-    
-    X_emb = embed_data(X_train[:,0], neighbours, kmer_set)
-    X_test_emb = embed_data(X_train[:,0], neighbours, kmer_set)
 
     C = 0.1
-    svm = SVM(kernel=MismatchKernel(k=k,m=m), C=C)
-    svm.fit(np.array(X_emb), Y)
+    svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set), C=C)
+    svm.fit(X_train[:,0], Y)
     
     # Create submission file
-    pred = svm.predict_classes(X_test_emb)
+    pred = svm.predict_classes(X_test[:,0])
     pred = np.where(pred == -1, 0, 1)
     pred_df = pd.DataFrame()
     pred_df['Bound'] = pred[0]

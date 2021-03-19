@@ -89,10 +89,12 @@ class SpectrumKernel(Kernel):
 
 class MismatchKernel(Kernel):
 
-    def __init__(self, k, m):
+    def __init__(self, k, m, neighbours, kmer_set):
         super().__init__()
         self.k = k
         self.m = m
+        self.kmer_set = kmer_set
+        self.neighbours = neighbours
 
 #     def similarity(self, x, y):
 #         """ Mismatch kernel \\
@@ -109,6 +111,52 @@ class MismatchKernel(Kernel):
 #             sp += np.sum(np.sum(substr_x[i] != substr_y, axis=1) <= self.m)
 #         return sp
 
+    def neighbour_embed_data(self, X):
+        """
+        Embed data with neighbours.
+        X: array of string
+        """
+        X_emb = [{} for i in range(len(X))]
+        for i in range(len(X)):
+            x = X[i]
+            kmer_x = [x[j:j + self.k] for j in range(len(X[0]) - self.k + 1)]
+            for kmer in kmer_x:
+                neigh_kmer = self.neighbours[kmer]
+                for neigh in neigh_kmer:
+                    idx_neigh = self.kmer_set[neigh]
+                    if idx_neigh in X_emb[i]:
+                        X_emb[i][idx_neigh] += 1
+                    else:
+                        X_emb[i][idx_neigh] = 1
+        return X_emb
+    
+    def one_hot_embed_data(self, X):
+        """
+        Embed data with one hot encoding.
+        X: array of string
+        """
+        X_emb = [{} for i in range(len(X))]
+        for i in range(len(X)):
+            x = X[i]
+            kmer_x = [x[j:j + self.k] for j in range(len(X[0]) - self.k + 1)]
+            for kmer in kmer_x:
+                X_emb[i][self.kmer_set[kmer]] = 1
+        return X_emb
+    
+    def to_sparse(self, X_emb):
+        """
+        Embed data to sparse matrix.
+        X_emb: list of dict.
+        """
+        data, row, col = [], [], []
+        for i in range(len(X_emb)):
+            x = X_emb[i]
+            data += list(x.values())
+            row += list(x.keys())
+            col += [i for j in range(len(x))]
+        X_sm = sparse.coo_matrix((data, (row, col)))
+        return X_sm
+
     def similarity(self, x, y):
         """ Mismatch kernel \\
         x, y: dict
@@ -121,34 +169,26 @@ class MismatchKernel(Kernel):
 
     def gram(self, X1, X2=None):
         """ Compute the gram matrix of a data vector X where the (i,j) entry is defined as <Xi,Xj>\\
-        X1: data vector (n_samples_1 x embed dict)
-        X2: data vector (n_samples_2 x embed_dict), if None compute the gram matrix for (X1,X1)
+        X1: array of string (n_samples_1,)
+        X2: array of string (n_samples_2,), if None compute the gram matrix for (X1,X1)
         """
-
-        def to_sparse(X):
-            data, row, col = [], [], []
-            for i in range(len(X)):
-                x = X[i]
-                data += list(x.values())
-                row += list(x.keys())
-                col += [i for j in range(len(x))]
-            X_sm = sparse.coo_matrix((data, (row, col)))
-            return X_sm
-
+        
+        X1_emb = self.neighbour_embed_data(X1)
         X1_sm = to_sparse(X1)
+        
         if X2 is None:
-            X2_sm = X1_sm
-        else:
-            X2_sm = to_sparse(X2)
+            X2 = X1
+        X2_emb = self.one_hot_embed_data(X2)
+        X2_sm = to_sparse(X2)
 
-            # Reshape matrices if the sizes are different
-            nadd_row = abs(X1_sm.shape[0] - X2_sm.shape[0])
-            if X1_sm.shape[0] > X2_sm.shape[0]:
-                add_row = sparse.coo_matrix(([0], ([nadd_row-1], [X2_sm.shape[1]-1])))
-                X2_sm = sparse.vstack((X2_sm, add_row))
-            elif X1_sm.shape[0] < X2_sm.shape[0]:
-                add_row = sparse.coo_matrix(([0], ([nadd_row - 1], [X1_sm.shape[1] - 1])))
-                X1_sm = sparse.vstack((X1_sm, add_row))
+        # Reshape matrices if the sizes are different
+        nadd_row = abs(X1_sm.shape[0] - X2_sm.shape[0])
+        if X1_sm.shape[0] > X2_sm.shape[0]:
+            add_row = sparse.coo_matrix(([0], ([nadd_row-1], [X2_sm.shape[1]-1])))
+            X2_sm = sparse.vstack((X2_sm, add_row))
+        elif X1_sm.shape[0] < X2_sm.shape[0]:
+            add_row = sparse.coo_matrix(([0], ([nadd_row - 1], [X1_sm.shape[1] - 1])))
+            X1_sm = sparse.vstack((X1_sm, add_row))
 
         G = (X1_sm.T * X2_sm).todense().astype('float')
         return G
