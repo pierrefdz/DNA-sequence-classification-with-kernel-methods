@@ -149,7 +149,7 @@ elif kernel=='poly':
 elif kernel=='spectrum':
     svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 elif kernel=='mismatch':
-    svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0), C=C)
+    svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0,normalize=True), C=C)
 
 if kernel_on_matrices:
     svm.fit(X0_mat100_train, Y0_train)
@@ -172,7 +172,7 @@ elif kernel=='poly':
 elif kernel=='spectrum':
     svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 elif kernel=='mismatch':
-    svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1), C=C)
+    svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1,normalize=True), C=C)
 
 if kernel_on_matrices:
     svm.fit(X1_mat100_train, Y1_train)
@@ -196,7 +196,7 @@ elif kernel=='poly':
 elif kernel=='spectrum':
     svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 elif kernel=='mismatch':
-    svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2), C=C)
+    svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2,normalize=True), C=C)
 
 if kernel_on_matrices:
     svm.fit(X2_mat100_train, Y2_train)

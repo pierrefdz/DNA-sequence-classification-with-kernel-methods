@@ -12,7 +12,7 @@ from classifiers.svm import SVM
 ## PARAMETERS ##
 
 kernel = 'mismatch' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
-C = 1.0 #Parameter C for SVM
+C = 10.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
@@ -196,7 +196,7 @@ if cross_validate_0:
         elif kernel=='spectrum':
             svm = SVM(kernel=SpectrumKernel(k=k),C=C)
         elif kernel=='mismatch':
-            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0), C=C)
+            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0,normalize=True), C=C)
 
         if kernel_on_matrices:
             svm.fit(X0_mat100_train_, Y0_train_)
@@ -257,7 +257,7 @@ if cross_validate_1:
         elif kernel=='spectrum':
             svm = SVM(kernel=SpectrumKernel(k=k),C=C)
         elif kernel=='mismatch':
-            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1), C=C)
+            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1,normalize=True), C=C)
 
 
         if kernel_on_matrices:
@@ -318,7 +318,7 @@ if cross_validate_2:
         elif kernel=='spectrum':
             svm = SVM(kernel=SpectrumKernel(k=k),C=C)
         elif kernel=='mismatch':
-            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2), C=C)
+            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2,normalize=True), C=C)
 
         if kernel_on_matrices:
             svm.fit(X2_mat100_train_, Y2_train_)
