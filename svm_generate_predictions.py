@@ -67,7 +67,7 @@ if kernel=='mismatch':
         print('Neighbors correctly loaded')
     except:
         print('No file found, creating kmers neighbors')
-        kmer_set_0 = create_kmer_set(X0_train[:,0], k)
+        kmer_set_0 = create_kmer_set(X0_train[:,0], k, kmer_set={})
         kmer_set_0 = create_kmer_set(X0_test[:,0], k, kmer_set_0)
         neighbours_0 = get_neighbours(kmer_set_0, m)
         
@@ -81,7 +81,7 @@ if kernel=='mismatch':
         print('Neighbors correctly loaded')
     except:
         print('No file found, creating kmers neighbors')
-        kmer_set_1 = create_kmer_set(X1_train[:,0], k)
+        kmer_set_1 = create_kmer_set(X1_train[:,0], k, kmer_set={})
         kmer_set_1 = create_kmer_set(X1_test[:,0], k, kmer_set_1)
         neighbours_1 = get_neighbours(kmer_set_1, m)
         
@@ -95,7 +95,7 @@ if kernel=='mismatch':
         print('Neighbors correctly loaded')
     except:
         print('No file found, creating kmers neighbors')
-        kmer_set_2 = create_kmer_set(X2_train[:,0], k)
+        kmer_set_2 = create_kmer_set(X2_train[:,0], k, kmer_set={})
         kmer_set_2 = create_kmer_set(X2_test[:,0], k, kmer_set_2)
         neighbours_2 = get_neighbours(kmer_set_2, m)
         

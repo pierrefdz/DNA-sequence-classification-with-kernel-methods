@@ -2,14 +2,16 @@
 
 import numpy as np
 import pandas as pd
+import pickle
 from tqdm import tqdm
 
 from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel
+from utils import create_kmer_set,m_neighbours,get_neighbours
 from classifiers.svm import SVM
 
 ## PARAMETERS ##
 
-kernel = 'rbf' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
+kernel = 'mismatch' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
 C = 1.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
@@ -71,7 +73,7 @@ if kernel=='mismatch':
         print('Neighbors correctly loaded')
     except:
         print('No file found, creating kmers neighbors')
-        kmer_set_0 = create_kmer_set(X0_train[:,0], k)
+        kmer_set_0 = create_kmer_set(X0_train[:,0], k, kmer_set={})
         kmer_set_0 = create_kmer_set(X0_test[:,0], k, kmer_set_0)
         neighbours_0 = get_neighbours(kmer_set_0, m)
         
@@ -85,7 +87,7 @@ if kernel=='mismatch':
         print('Neighbors correctly loaded')
     except:
         print('No file found, creating kmers neighbors')
-        kmer_set_1 = create_kmer_set(X1_train[:,0], k)
+        kmer_set_1 = create_kmer_set(X1_train[:,0], k, kmer_set={})
         kmer_set_1 = create_kmer_set(X1_test[:,0], k, kmer_set_1)
         neighbours_1 = get_neighbours(kmer_set_1, m)
         
@@ -99,7 +101,7 @@ if kernel=='mismatch':
         print('Neighbors correctly loaded')
     except:
         print('No file found, creating kmers neighbors')
-        kmer_set_2 = create_kmer_set(X2_train[:,0], k)
+        kmer_set_2 = create_kmer_set(X2_train[:,0], k, kmer_set={})
         kmer_set_2 = create_kmer_set(X2_test[:,0], k, kmer_set_2)
         neighbours_2 = get_neighbours(kmer_set_2, m)
         
