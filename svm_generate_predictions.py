@@ -13,7 +13,7 @@ from classifiers.svm import SVM
 
 
 kernel = 'mismatch' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
-C = 10.0 #Parameter C for SVM
+C = 1.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 1.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
@@ -123,6 +123,11 @@ if shuffle:
 #Check if the kernel applies on matrices or strings
 kernel_on_matrices = (kernel=='linear' or kernel=='rbf' or kernel=='poly')
 
+#Put test matrices into the right format
+X0_test = X0_test[:,0]
+X1_test = X1_test[:,0]
+X2_test = X2_test[:,0]
+
 ## PRINT CONFIGURATION ##
 
 print("Kernel:", kernel)
@@ -206,14 +211,13 @@ else:
     svm.fit(X2_train, Y2_train)
     pred_2 = svm.predict_classes(X2_test)
 
-svm.fit(X2_mat100_train, Y2_train)
-pred_2 = svm.predict_classes(X2_mat100_test)
-
 ## CREATE SUBMISSION FILE ##
 
-pred = np.concatenate([pred_0,pred_1,pred_2])
+pred = np.concatenate([pred_0.squeeze(),pred_1.squeeze(),pred_2.squeeze()])
 pred = np.where(pred == -1, 0, 1)
 pred_df = pd.DataFrame()
+print(pred.shape)
+print(pred)
 pred_df['Bound'] = pred
 pred_df.index.name = 'Id'
 pred_df.to_csv('pred.csv', sep=',', header=True)
