@@ -89,58 +89,42 @@ class SpectrumKernel(Kernel):
 
 class MismatchKernel(Kernel):
 
-    def __init__(self, k, m, neighbours, kmer_set):
+    def __init__(self, k, m, neighbours, kmer_set, normalize=False):
         super().__init__()
         self.k = k
         self.m = m
         self.kmer_set = kmer_set
         self.neighbours = neighbours
+        self.normalize = normalize
 
-#     def similarity(self, x, y):
-#         """ Mismatch kernel \\
-#         x, y: string
-#         """
-#         substr_x = [c for c in x]
-#         substr_x = np.array([substr_x[i:i + self.k] for i in range(len(x) - self.k + 1)])
-#
-#         substr_y = [c for c in y]
-#         substr_y = np.array([substr_y[i:i + self.k] for i in range(len(y) - self.k + 1)])
-#
-#         sp = 0
-#         for i in range(len(substr_x)):
-#             sp += np.sum(np.sum(substr_x[i] != substr_y, axis=1) <= self.m)
-#         return sp
+    def neighbour_embed_kmer(self, x):
+        """
+        Embed kmer with neighbours.
+        x: str
+        """
+        kmer_x = [x[j:j + self.k] for j in range(len(x) - self.k + 1)]
+        x_emb = {}
+        for kmer in kmer_x:
+            neigh_kmer = self.neighbours[kmer]
+            for neigh in neigh_kmer:
+                idx_neigh = self.kmer_set[neigh]
+                if idx_neigh in x_emb:
+                    x_emb[idx_neigh] += 1
+                else:
+                    x_emb[idx_neigh] = 1
+        return x_emb
+        
 
     def neighbour_embed_data(self, X):
         """
         Embed data with neighbours.
         X: array of string
         """
-        X_emb = [{} for i in range(len(X))]
+        X_emb = []
         for i in range(len(X)):
             x = X[i]
-            kmer_x = [x[j:j + self.k] for j in range(len(X[0]) - self.k + 1)]
-            for kmer in kmer_x:
-                neigh_kmer = self.neighbours[kmer]
-                for neigh in neigh_kmer:
-                    idx_neigh = self.kmer_set[neigh]
-                    if idx_neigh in X_emb[i]:
-                        X_emb[i][idx_neigh] += 1
-                    else:
-                        X_emb[i][idx_neigh] = 1
-        return X_emb
-    
-    def one_hot_embed_data(self, X):
-        """
-        Embed data with one hot encoding.
-        X: array of string
-        """
-        X_emb = [{} for i in range(len(X))]
-        for i in range(len(X)):
-            x = X[i]
-            kmer_x = [x[j:j + self.k] for j in range(len(X[0]) - self.k + 1)]
-            for kmer in kmer_x:
-                X_emb[i][self.kmer_set[kmer]] = 1
+            x_emb = self.neighbour_embed_kmer(x)
+            X_emb.append(x_emb)
         return X_emb
     
     def to_sparse(self, X_emb):
@@ -161,24 +145,15 @@ class MismatchKernel(Kernel):
         """ Mismatch kernel \\
         x, y: string
         """
-        kmer_x = [x[j:j + self.k] for j in range(len(x) - self.k + 1)]
-        x_emb = {}
-        for kmer in kmer_x:
-            neigh_kmer = self.neighbours[kmer]
-            for neigh in neigh_kmer:
-                idx_neigh = self.kmer_set[neigh]
-                if idx_neigh in x_emb:
-                    x_emb[idx_neigh] += 1
-                else:
-                    x_emb[idx_neigh] = 1
-        kmer_y = [y[j:j + self.k] for j in range(len(y) - self.k + 1)]
-        y_emb = {}
-        for kmer in kmer_y:
-            y_emb[self.kmer_set[kmer]] = 1
+        x_emb = self.neighbour_embed_kmer(x)
+        y_emb = self.neighbour_embed_kmer(y)
         sp = 0
         for idx_neigh in x_emb:
             if idx_neigh in y_emb:
                 sp += x_emb[idx_neigh] * y_emb[idx_neigh]
+        if self.normalize:
+            sp /= np.sqrt(np.sum(np.array(list(x_emb.values()))**2))
+            sp /= np.sqrt(np.sum(np.array(list(y_emb.values()))**2))
         return sp
 
     def gram(self, X1, X2=None):
@@ -192,7 +167,7 @@ class MismatchKernel(Kernel):
         
         if X2 is None:
             X2 = X1
-        X2_emb = self.one_hot_embed_data(X2)
+        X2_emb = self.neighbour_embed_data(X2)
         X2_sm = self.to_sparse(X2_emb)
 
         # Reshape matrices if the sizes are different
@@ -205,4 +180,9 @@ class MismatchKernel(Kernel):
             X1_sm = sparse.vstack((X1_sm, add_row))
 
         G = (X1_sm.T * X2_sm).todense().astype('float')
+        
+        if self.normalize:
+            G /= np.array(np.sqrt(X1_sm.power(2).sum(0)))[0,:,None]
+            G /= np.array(np.sqrt(X2_sm.power(2).sum(0)))[0,None,:]
+            
         return G
