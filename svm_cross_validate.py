@@ -9,12 +9,13 @@ from classifiers.svm import SVM
 
 ## PARAMETERS ##
 
-kernel = 'spectrum' #'linear' 'rbf', 'poly' or 'spectrum' #TODO: Add support for mismatch
+kernel = 'rbf' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
 C = 1.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
 k = 12 #Parameter k for SVM (only for 'spectrum')
+m = 2 #Parameter m for SVM (only for 'mismatch')
 
 shuffle = True #Shuffle the data
 k_fold = 5 #Number of folds for cross_validation
@@ -60,6 +61,50 @@ Y0_train = np.where(Y0_train == 0, -1, 1)
 Y1_train = np.where(Y1_train == 0, -1, 1)
 Y2_train = np.where(Y2_train == 0, -1, 1)
 
+#If the kernel is 'mismatch', compute kmers neighbors
+if kernel=='mismatch':
+
+    #Dataset0
+    try:
+        # Load
+        neighbours_0, kmer_set_0 = pickle.load(open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'rb'))
+        print('Neighbors correctly loaded')
+    except:
+        print('No file found, creating kmers neighbors')
+        kmer_set_0 = create_kmer_set(X0_train[:,0], k)
+        kmer_set_0 = create_kmer_set(X0_test[:,0], k, kmer_set_0)
+        neighbours_0 = get_neighbours(kmer_set_0, m)
+        
+        # Save neighbours and kmer set
+        pickle.dump([neighbours_0, kmer_set_0], open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'wb'))
+
+    #Dataset1
+    try:
+        # Load
+        neighbours_1, kmer_set_1 = pickle.load(open('neighbours_1'+str(k)+'_'+str(m)+'.p', 'rb'))
+        print('Neighbors correctly loaded')
+    except:
+        print('No file found, creating kmers neighbors')
+        kmer_set_1 = create_kmer_set(X1_train[:,0], k)
+        kmer_set_1 = create_kmer_set(X1_test[:,0], k, kmer_set_1)
+        neighbours_1 = get_neighbours(kmer_set_1, m)
+        
+        # Save neighbours and kmer set
+        pickle.dump([neighbours_1, kmer_set_1], open('neighbours_1'+str(k)+'_'+str(m)+'.p', 'wb'))
+
+    #Dataset2
+    try:
+        # Load
+        neighbours_2, kmer_set_2 = pickle.load(open('neighbours_2'+str(k)+'_'+str(m)+'.p', 'rb'))
+        print('Neighbors correctly loaded')
+    except:
+        print('No file found, creating kmers neighbors')
+        kmer_set_2 = create_kmer_set(X2_train[:,0], k)
+        kmer_set_2 = create_kmer_set(X2_test[:,0], k, kmer_set_2)
+        neighbours_2 = get_neighbours(kmer_set_2, m)
+        
+        # Save neighbours and kmer set
+        pickle.dump([neighbours_2, kmer_set_2], open('neighbours_2'+str(k)+'_'+str(m)+'.p', 'wb'))
 
 #Shuffling
 if shuffle:
@@ -97,7 +142,10 @@ if test_on_little_data:
     X2_mat100_train = X2_mat100_train[:int(frac*len(X2_mat100_train))]
     Y2_train = Y2_train[:int(frac*len(Y2_train))]
 
-## Print the configuration ##
+#Check if the kernel applies on matrices or strings
+kernel_on_matrices = (kernel=='linear' or kernel=='rbf' or kernel=='poly')
+
+## PRINT CONFIGURATION ##
 
 print("Kernel:", kernel)
 print("C:", C)
@@ -109,8 +157,6 @@ if kernel == 'poly':
 if kernel== 'spectrum':
     print("K:",k)
 print()
-
-kernel_on_matrices = (kernel=='linear' or kernel=='rbf' or kernel=='poly')
 
 ## CROSS-VALIDATE ON DATASET 0 ##
 
@@ -147,6 +193,8 @@ if cross_validate_0:
             svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
         elif kernel=='spectrum':
             svm = SVM(kernel=SpectrumKernel(k=k),C=C)
+        elif kernel=='mismatch':
+            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0), C=C)
 
         if kernel_on_matrices:
             svm.fit(X0_mat100_train_, Y0_train_)
@@ -206,6 +254,8 @@ if cross_validate_1:
             svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
         elif kernel=='spectrum':
             svm = SVM(kernel=SpectrumKernel(k=k),C=C)
+        elif kernel=='mismatch':
+            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1), C=C)
 
 
         if kernel_on_matrices:
@@ -265,6 +315,8 @@ if cross_validate_2:
             svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
         elif kernel=='spectrum':
             svm = SVM(kernel=SpectrumKernel(k=k),C=C)
+        elif kernel=='mismatch':
+            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2), C=C)
 
         if kernel_on_matrices:
             svm.fit(X2_mat100_train_, Y2_train_)
