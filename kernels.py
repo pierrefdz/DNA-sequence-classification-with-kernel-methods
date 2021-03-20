@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as sparse
+from tqdm import tqdm
 
 class Kernel():
     """ Abstract Kernel class"""
@@ -21,7 +22,7 @@ class Kernel():
         n_samples_1 = X1.shape[0]
         n_samples_2 = X2.shape[0]
         G = np.zeros((n_samples_1, n_samples_2))
-        for ii in range(n_samples_1):
+        for ii in tqdm(range(n_samples_1)):
             for jj in range(n_samples_2):
                 G[ii,jj] = self.similarity(X1[ii], X2[jj])
         return G
