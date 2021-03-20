@@ -9,19 +9,21 @@ from classifiers.svm import SVM
 
 ## PARAMETERS ##
 
-kernel = 'rbf' # 'linear' 'rbf' or 'poly' #TODO: Add support for spectrum and mismatch
-C = 10.0 #Parameter C for SVM
+kernel = 'spectrum' #'linear' 'rbf', 'poly' or 'spectrum' #TODO: Add support for mismatch
+C = 1.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
-coef0 = 1.0 #Parameter coef0 for SVM (only for 'poly')
+coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
+k = 12 #Parameter k for SVM (only for 'spectrum')
 
 shuffle = True #Shuffle the data
-rescale_y = True #Rescale labels to -1 and 1
 k_fold = 5 #Number of folds for cross_validation
 
 cross_validate_0 = True #Choose to cross_validate on dataset 0 or not
 cross_validate_1 = True #Choose to cross_validate on dataset 1 or not
 cross_validate_2 = True #Choose to cross_validate on dataset 2 or not
+
+test_on_little_data = False #Test on little data. /!\ Before running real tests, make sure this is set to "False"
 
 ## LOAD DATA ##
 
@@ -63,20 +65,39 @@ Y2_train = np.where(Y2_train == 0, -1, 1)
 if shuffle:
 
     shuffling_0 = np.random.permutation(len(X0_mat100_train))
-    X0_train = X0_train[shuffling_0]
+    X0_train = X0_train[shuffling_0][:,0]
     X0_mat100_train = X0_mat100_train[shuffling_0]
     Y0_train = Y0_train[shuffling_0]
 
     shuffling_1 = np.random.permutation(len(X1_mat100_train))
-    X1_train = X1_train[shuffling_1]
+    X1_train = X1_train[shuffling_1][:,0]
     X1_mat100_train = X1_mat100_train[shuffling_1]
     Y1_train = Y1_train[shuffling_1]
 
     shuffling_2 = np.random.permutation(len(X2_mat100_train))
-    X2_train = X2_train[shuffling_2]
+    X2_train = X2_train[shuffling_2][:,0]
     X2_mat100_train = X2_mat100_train[shuffling_2]
     Y2_train = Y2_train[shuffling_2]
 
+
+#Take a small fraction of the data for tests 
+if test_on_little_data:
+
+    frac = 0.2
+
+    X0_train = X0_train[:int(frac*len(X0_train))]
+    X0_mat100_train = X0_mat100_train[:int(frac*len(X0_mat100_train))]
+    Y0_train = Y0_train[:int(frac*len(Y0_train))]
+
+    X1_train = X1_train[:int(frac*len(X1_train))]
+    X1_mat100_train = X1_mat100_train[:int(frac*len(X1_mat100_train))]
+    Y1_train = Y1_train[:int(frac*len(Y1_train))]
+
+    X2_train = X2_train[:int(frac*len(X2_train))]
+    X2_mat100_train = X2_mat100_train[:int(frac*len(X2_mat100_train))]
+    Y2_train = Y2_train[:int(frac*len(Y2_train))]
+
+## Print the configuration ##
 
 print("Kernel:", kernel)
 print("C:", C)
@@ -85,8 +106,11 @@ if kernel == 'rbf' or kernel == 'poly':
 if kernel == 'poly':
     print("Coef0:", coef0)
     print("Degree:", degree)
+if kernel== 'spectrum':
+    print("K:",k)
 print()
 
+kernel_on_matrices = (kernel=='linear' or kernel=='rbf' or kernel=='poly')
 
 ## CROSS-VALIDATE ON DATASET 0 ##
 
@@ -110,6 +134,7 @@ if cross_validate_0:
         indices_train = np.concatenate([np.arange(len(X0_mat100_train))[0:split[i]],np.arange(len(X0_mat100_train))[split[i+1]:]]) 
 
         X0_mat100_train_,X0_mat100_val_ = X0_mat100_train[indices_train],X0_mat100_train[indices_val]
+        X0_train_,X0_val_ = X0_train[indices_train],X0_train[indices_val]
         Y0_train_,Y0_val_ = Y0_train[indices_train],Y0_train[indices_val]
 
         print('Doing SVM')
@@ -120,16 +145,25 @@ if cross_validate_0:
             svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
         elif kernel=='poly':
             svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
+        elif kernel=='spectrum':
+            svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 
-        svm.fit(X0_mat100_train_, Y0_train_)
+        if kernel_on_matrices:
+            svm.fit(X0_mat100_train_, Y0_train_)
+            pred_train = svm.predict_classes(X0_mat100_train_)
+            pred_val = svm.predict_classes(X0_mat100_val_)
 
-        pred_train = svm.predict_classes(X0_mat100_train_)
-        print("Accuracy on train:", np.sum(np.squeeze(pred_train)==np.squeeze(Y0_train_)) / len(Y0_train_))
+        else:
+            svm.fit(X0_train_, Y0_train_)
+            pred_train = svm.predict_classes(X0_train_)
+            pred_val = svm.predict_classes(X0_val_)
 
-        pred_val = svm.predict_classes(X0_mat100_val_)
+        train_acc = np.sum(np.squeeze(pred_train)==np.squeeze(Y0_train_)) / len(Y0_train_)
         val_acc = np.sum(np.squeeze(pred_val)==np.squeeze(Y0_val_)) / len(Y0_val_)
-        print("Accuracy on val:", val_acc)
 
+
+        print("Accuracy on train:", train_acc)
+        print("Accuracy on val:", val_acc)
         val_accs_0.append(val_acc.copy())
 
     print(val_accs_0)
@@ -159,6 +193,7 @@ if cross_validate_1:
         indices_train = np.concatenate([np.arange(len(X1_mat100_train))[0:split[i]],np.arange(len(X1_mat100_train))[split[i+1]:]]) 
 
         X1_mat100_train_,X1_mat100_val_ = X1_mat100_train[indices_train],X1_mat100_train[indices_val]
+        X1_train_,X1_val_ = X1_train[indices_train],X1_train[indices_val]
         Y1_train_,Y1_val_ = Y1_train[indices_train],Y1_train[indices_val]
 
         print('Doing SVM')
@@ -169,16 +204,26 @@ if cross_validate_1:
             svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
         elif kernel=='poly':
             svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
+        elif kernel=='spectrum':
+            svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 
-        svm.fit(X1_mat100_train_, Y1_train_)
 
-        pred_train = svm.predict_classes(X1_mat100_train_)
-        print("Accuracy on train:", np.sum(np.squeeze(pred_train)==np.squeeze(Y1_train_)) / len(Y1_train_))
+        if kernel_on_matrices:
+            svm.fit(X1_mat100_train_, Y1_train_)
+            pred_train = svm.predict_classes(X1_mat100_train_)
+            pred_val = svm.predict_classes(X1_mat100_val_)
 
-        pred_val = svm.predict_classes(X1_mat100_val_)
+        else:
+            svm.fit(X1_train_, Y1_train_)
+            pred_train = svm.predict_classes(X1_train_)
+            pred_val = svm.predict_classes(X1_val_)
+
+        train_acc = np.sum(np.squeeze(pred_train)==np.squeeze(Y1_train_)) / len(Y1_train_)
         val_acc = np.sum(np.squeeze(pred_val)==np.squeeze(Y1_val_)) / len(Y1_val_)
-        print("Accuracy on val:", val_acc)
 
+
+        print("Accuracy on train:", train_acc)
+        print("Accuracy on val:", val_acc)
         val_accs_1.append(val_acc.copy())
 
     print(val_accs_1)
@@ -207,6 +252,7 @@ if cross_validate_2:
         indices_train = np.concatenate([np.arange(len(X2_mat100_train))[0:split[i]],np.arange(len(X2_mat100_train))[split[i+1]:]]) 
 
         X2_mat100_train_,X2_mat100_val_ = X2_mat100_train[indices_train],X2_mat100_train[indices_val]
+        X2_train_,X2_val_ = X2_train[indices_train],X2_train[indices_val]
         Y2_train_,Y2_val_ = Y2_train[indices_train],Y2_train[indices_val]
 
         print('Doing SVM')
@@ -217,16 +263,25 @@ if cross_validate_2:
             svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
         elif kernel=='poly':
             svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
+        elif kernel=='spectrum':
+            svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 
-        svm.fit(X2_mat100_train_, Y2_train_)
+        if kernel_on_matrices:
+            svm.fit(X2_mat100_train_, Y2_train_)
+            pred_train = svm.predict_classes(X2_mat100_train_)
+            pred_val = svm.predict_classes(X2_mat100_val_)
 
-        pred_train = svm.predict_classes(X2_mat100_train_)
-        print("Accuracy on train:", np.sum(np.squeeze(pred_train)==np.squeeze(Y2_train_)) / len(Y2_train_))
+        else:
+            svm.fit(X2_train_, Y2_train_)
+            pred_train = svm.predict_classes(X2_train_)
+            pred_val = svm.predict_classes(X2_val_)
 
-        pred_val = svm.predict_classes(X2_mat100_val_)
+        train_acc = np.sum(np.squeeze(pred_train)==np.squeeze(Y2_train_)) / len(Y2_train_)
         val_acc = np.sum(np.squeeze(pred_val)==np.squeeze(Y2_val_)) / len(Y2_val_)
-        print("Accuracy on val:", val_acc)
 
+
+        print("Accuracy on train:", train_acc)
+        print("Accuracy on val:", val_acc)
         val_accs_2.append(val_acc.copy())
 
     print(val_accs_2)

@@ -11,14 +11,14 @@ from classifiers.svm import SVM
 ## PARAMETERS ##
 
 
-kernel = 'rbf' # 'linear' 'rbf' or 'poly' #TODO: Add support for spectrum and mismatch
+kernel = 'rbf' #'linear' 'rbf', 'poly' or 'spectrum' #TODO: Add support for mismatch
 C = 10.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 1.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
+k = 12 #Parameter k for SVM (only for 'spectrum')
 
 shuffle = True #Shuffle the data
-rescale_y = True #Rescale labels to -1 and 1
 
 ## LOAD DATA ##
 
@@ -59,17 +59,17 @@ Y2_train = np.where(Y2_train == 0, -1, 1)
 if shuffle:
 
     shuffling_0 = np.random.permutation(len(X0_mat100_train))
-    X0_train = X0_train[shuffling_0]
+    X0_train = X0_train[shuffling_0][:,0]
     X0_mat100_train = X0_mat100_train[shuffling_0]
     Y0_train = Y0_train[shuffling_0]
 
     shuffling_1 = np.random.permutation(len(X1_mat100_train))
-    X1_train = X1_train[shuffling_1]
+    X1_train = X1_train[shuffling_1][:,0]
     X1_mat100_train = X1_mat100_train[shuffling_1]
     Y1_train = Y1_train[shuffling_1]
 
     shuffling_2 = np.random.permutation(len(X2_mat100_train))
-    X2_train = X2_train[shuffling_2]
+    X2_train = X2_train[shuffling_2][:,0]
     X2_mat100_train = X2_mat100_train[shuffling_2]
     Y2_train = Y2_train[shuffling_2]
 
@@ -81,8 +81,11 @@ if kernel == 'rbf' or kernel == 'poly':
 if kernel == 'poly':
     print("Coef0:", coef0)
     print("Degree:", degree)
+if kernel== 'spectrum':
+    print("K:",k)
 print()
 
+kernel_on_matrices = (kernel=='linear' or kernel=='rbf' or kernel=='poly')
 
 ## APPLY SVM ON DATASET 0 ##
 
@@ -94,9 +97,16 @@ elif kernel=='rbf':
     svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
 elif kernel=='poly':
     svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
+elif kernel=='spectrum':
+    svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 
-svm.fit(X0_mat100_train, Y0_train)
-pred_0 = svm.predict_classes(X0_mat100_test)
+if kernel_on_matrices:
+    svm.fit(X0_mat100_train, Y0_train)
+    pred_0 = svm.predict_classes(X0_mat100_test)
+
+else:
+    svm.fit(X0_train, Y0_train)
+    pred_0 = svm.predict_classes(X0_test)
 
 ## APPLY SVM ON DATASET 1 ##
 
@@ -108,9 +118,17 @@ elif kernel=='rbf':
     svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
 elif kernel=='poly':
     svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
+elif kernel=='spectrum':
+    svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 
-svm.fit(X1_mat100_train, Y1_train)
-pred_1 = svm.predict_classes(X1_mat100_test)
+if kernel_on_matrices:
+    svm.fit(X1_mat100_train, Y1_train)
+    pred_1 = svm.predict_classes(X1_mat100_test)
+
+else:
+    svm.fit(X1_train, Y1_train)
+    pred_1 = svm.predict_classes(X1_test)
+
 
 ## APPLY SVM ON DATASET 2 ##
 
@@ -122,6 +140,16 @@ elif kernel=='rbf':
     svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
 elif kernel=='poly':
     svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
+elif kernel=='spectrum':
+    svm = SVM(kernel=SpectrumKernel(k=k),C=C)
+
+if kernel_on_matrices:
+    svm.fit(X2_mat100_train, Y2_train)
+    pred_2 = svm.predict_classes(X2_mat100_test)
+
+else:
+    svm.fit(X2_train, Y2_train)
+    pred_2 = svm.predict_classes(X2_test)
 
 svm.fit(X2_mat100_train, Y2_train)
 pred_2 = svm.predict_classes(X2_mat100_test)
