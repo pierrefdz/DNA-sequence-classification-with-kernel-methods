@@ -166,7 +166,12 @@ elif kernel=='sum':
     m = 2
     neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_0_'+str(k)+'_'+str(m)+'.p', 'rb'))
     kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12], weights=[1.0, 1.0]), C=C)
+    k = 8
+    m = 1
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_0_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    kernel_8 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+
+    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12,kernel_8], weights=[1.0, 1.0, 1.0]), C=C)
 
 if kernel_on_matrices:
     svm.fit(X0_mat100_train, Y0_train)
@@ -201,7 +206,12 @@ elif kernel=='sum':
     m = 2
     neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_1_'+str(k)+'_'+str(m)+'.p', 'rb'))
     kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12], weights=[1.0, 0.5]), C=C)
+    k = 8
+    m = 1
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_1_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    kernel_8 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+
+    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12,kernel_8], weights=[1.0, 1.0, 1.0]), C=C)
 
 if kernel_on_matrices:
     svm.fit(X1_mat100_train, Y1_train)
@@ -237,7 +247,12 @@ elif kernel=='sum':
     m = 2
     neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_2_'+str(k)+'_'+str(m)+'.p', 'rb'))
     kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12], weights=[1.0, 1.0]), C=C)
+    k = 8
+    m = 1
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_2_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    kernel_8 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+
+    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12,kernel_8], weights=[1.0, 1.0, 1.0]), C=C)
 
 if kernel_on_matrices:
     svm.fit(X2_mat100_train, Y2_train)

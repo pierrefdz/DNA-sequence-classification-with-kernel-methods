@@ -6,18 +6,18 @@ import pickle
 from tqdm import tqdm
 
 from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel, SumKernel
-from utils import create_kmer_set,m_neighbours,get_neighbours
+from utils import create_kmer_set,m_neighbours,get_neighbours,load_neighbors
 from classifiers.svm import SVM
 
 ## PARAMETERS ##
 
-kernel = 'sum' #'linear' 'rbf', 'poly', 'spectrum', 'mismatch' or 'sum' (unsure if 'spectrum' and 'mismatch' work perfectly)
-C = 5.0 #Parameter C for SVM
+kernel = 'mismatch' #'linear' 'rbf', 'poly', 'spectrum', 'mismatch' or 'sum'
+C = 0.1 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
-k = 15 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
-m = 3 #Parameter m for SVM (only for 'mismatch')
+k = 10 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
+m = 1 #Parameter m for SVM (only for 'mismatch')
 
 shuffle = False #Shuffle the data
 k_fold = 5 #Number of folds for cross_validation
@@ -62,18 +62,6 @@ Y2_train = pd.read_csv("data/Ytr2.csv", sep=",", index_col=0).values
 Y0_train = np.where(Y0_train == 0, -1, 1)
 Y1_train = np.where(Y1_train == 0, -1, 1)
 Y2_train = np.where(Y2_train == 0, -1, 1)
-
-def load_neighbors(dataset, k, m):
-    """
-    dataset: 0, 1 or 2\\
-    k: len of the kmers
-    m: number of possible mismatches
-    """
-    file_name = 'neighbours_'+str(dataset)+'_'+str(k)+'_'+str(m)+'.p'
-    # Load
-    neighbours, kmer_set = pickle.load(open('saved_neighbors/'+file_name, 'rb'))
-    print('Neighbors correctly loaded!')
-    return neighbours, kmer_set
 
 #If the kernel is 'mismatch', compute kmers neighbors
 if kernel=='mismatch':
@@ -135,8 +123,10 @@ if kernel == 'rbf' or kernel == 'poly':
 if kernel == 'poly':
     print("Coef0:", coef0)
     print("Degree:", degree)
-if kernel== 'spectrum':
+if kernel== 'spectrum' or kernel == 'mismatch':
     print("K:",k)
+if kernel == 'mismatch':
+    print("M:",m)
 print()
 
 ## CROSS-VALIDATE ON DATASET 0 ##
@@ -157,19 +147,19 @@ if cross_validate_0:
         svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0,normalize=True), C=C)
     elif kernel=='sum':
         dataset_nbr = 0 
-        k = 15
-        m = 3
+        k = 8
+        m = 1
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
-        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        kernel_8 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
         k = 12
         m = 2
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
         kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-        k = 5
-        m = 1
+        k = 15
+        m = 3
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
-        kernel_5 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_5], weights=[1.0, 1.0, 1.0]), C=C)
+        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_8], weights=[1.0, 1.0, 1.0]), C=C)
 
     val_accs_0 = []
 
@@ -231,19 +221,19 @@ if cross_validate_1:
         svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1,normalize=True), C=C)
     elif kernel=='sum':
         dataset_nbr = 1
-        k = 15
-        m = 3
+        k = 8
+        m = 1
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
-        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        kernel_8 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
         k = 12
         m = 2
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
         kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-        k = 5
-        m = 1
+        k = 15
+        m = 3
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
-        kernel_5 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_5], weights=[1.0, 1.0, 1.0]), C=C)
+        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_8], weights=[1.0, 1.0, 1.0]), C=C)
 
     val_accs_1 = []
 
@@ -305,19 +295,19 @@ if cross_validate_2:
         svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2,normalize=True), C=C)
     elif kernel=='sum':
         dataset_nbr = 2
-        k = 15
-        m = 3
+        k = 8
+        m = 1
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
-        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        kernel_8 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
         k = 12
         m = 2
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
         kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-        k = 5
-        m = 1
+        k = 15
+        m = 3
         neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
-        kernel_5 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
-        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_5], weights=[1.0, 1.0, 1.0]), C=C)
+        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_8], weights=[1.0, 1.0, 1.0]), C=C)
 
     val_accs_2 = []
 

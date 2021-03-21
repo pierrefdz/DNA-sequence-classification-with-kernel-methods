@@ -57,3 +57,16 @@ def get_neighbours(kmer_set, m):
             if neighbour in kmer_set:
                 neighbours[kmer].append(neighbour)
     return neighbours
+
+
+def load_neighbors(dataset, k, m):
+    """
+    dataset: 0, 1 or 2\\
+    k: len of the kmers
+    m: number of possible mismatches
+    """
+    file_name = 'neighbours_'+str(dataset)+'_'+str(k)+'_'+str(m)+'.p'
+    # Load
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/'+file_name, 'rb'))
+    print('Neighbors correctly loaded!')
+    return neighbours, kmer_set
