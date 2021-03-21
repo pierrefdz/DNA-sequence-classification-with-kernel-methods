@@ -2,6 +2,8 @@ import numpy as np
 import scipy.sparse as sparse
 from tqdm import tqdm
 
+from tqdm import tqdm
+
 class Kernel():
     """ Abstract Kernel class"""
 
@@ -25,6 +27,34 @@ class Kernel():
         for ii in tqdm(range(n_samples_1)):
             for jj in range(n_samples_2):
                 G[ii,jj] = self.similarity(X1[ii], X2[jj])
+        return G
+
+
+class SumKernel(Kernel):
+
+    def __init__(self, kernels, weights=None):
+        """ kernels: list of kernels """
+        self.kernels = kernels
+        self.weights = weights
+        if self.weights is None:
+            self.weights = [1.0 for _ in kernels]
+        super().__init__()
+
+    def similarity(self, x, y):
+        """ x, y: string """
+        s = self.kernels[0].similarity(x,y) * self.weights[0]
+        for ii, kernel in enumerate(self.kernels[1:]):
+            s += kernel.similarity(x,y) * self.weights[ii]
+        return s
+
+    def gram(self, X1, X2=None):
+        """ Compute the sum of the gram matrices of all kernels\\
+        X1: array of string (n_samples_1,)
+        X2: array of string (n_samples_2,), if None compute the gram matrix for (X1,X1)
+        """
+        G = self.kernels[0].gram(X1,X2) * self.weights[0]
+        for ii, kernel in tqdm(enumerate(self.kernels[1:])):
+            G += kernel.gram(X1,X2) * self.weights[ii]
         return G
 
 
