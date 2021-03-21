@@ -5,21 +5,21 @@ import pandas as pd
 import pickle
 from tqdm import tqdm
 
-from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel
+from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel, SumKernel
 from utils import create_kmer_set,m_neighbours,get_neighbours
 from classifiers.svm import SVM
 
 ## PARAMETERS ##
 
-kernel = 'mismatch' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
-C = 10.0 #Parameter C for SVM
+kernel = 'sum' #'linear' 'rbf', 'poly', 'spectrum', 'mismatch' or 'sum' (unsure if 'spectrum' and 'mismatch' work perfectly)
+C = 5.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
-k = 12 #Parameter k for SVM (only for 'spectrum')
-m = 2 #Parameter m for SVM (only for 'mismatch')
+k = 15 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
+m = 3 #Parameter m for SVM (only for 'mismatch')
 
-shuffle = True #Shuffle the data
+shuffle = False #Shuffle the data
 k_fold = 5 #Number of folds for cross_validation
 
 cross_validate_0 = True #Choose to cross_validate on dataset 0 or not
@@ -63,50 +63,24 @@ Y0_train = np.where(Y0_train == 0, -1, 1)
 Y1_train = np.where(Y1_train == 0, -1, 1)
 Y2_train = np.where(Y2_train == 0, -1, 1)
 
+def load_neighbors(dataset, k, m):
+    """
+    dataset: 0, 1 or 2\\
+    k: len of the kmers
+    m: number of possible mismatches
+    """
+    file_name = 'neighbours_'+str(dataset)+'_'+str(k)+'_'+str(m)+'.p'
+    # Load
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/'+file_name, 'rb'))
+    print('Neighbors correctly loaded!')
+    return neighbours, kmer_set
+
 #If the kernel is 'mismatch', compute kmers neighbors
 if kernel=='mismatch':
 
-    #Dataset0
-    try:
-        # Load
-        neighbours_0, kmer_set_0 = pickle.load(open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'rb'))
-        print('Neighbors correctly loaded')
-    except:
-        print('No file found, creating kmers neighbors')
-        kmer_set_0 = create_kmer_set(X0_train[:,0], k, kmer_set={})
-        kmer_set_0 = create_kmer_set(X0_test[:,0], k, kmer_set_0)
-        neighbours_0 = get_neighbours(kmer_set_0, m)
-        
-        # Save neighbours and kmer set
-        pickle.dump([neighbours_0, kmer_set_0], open('neighbours_0'+str(k)+'_'+str(m)+'.p', 'wb'))
-
-    #Dataset1
-    try:
-        # Load
-        neighbours_1, kmer_set_1 = pickle.load(open('neighbours_1'+str(k)+'_'+str(m)+'.p', 'rb'))
-        print('Neighbors correctly loaded')
-    except:
-        print('No file found, creating kmers neighbors')
-        kmer_set_1 = create_kmer_set(X1_train[:,0], k, kmer_set={})
-        kmer_set_1 = create_kmer_set(X1_test[:,0], k, kmer_set_1)
-        neighbours_1 = get_neighbours(kmer_set_1, m)
-        
-        # Save neighbours and kmer set
-        pickle.dump([neighbours_1, kmer_set_1], open('neighbours_1'+str(k)+'_'+str(m)+'.p', 'wb'))
-
-    #Dataset2
-    try:
-        # Load
-        neighbours_2, kmer_set_2 = pickle.load(open('neighbours_2'+str(k)+'_'+str(m)+'.p', 'rb'))
-        print('Neighbors correctly loaded')
-    except:
-        print('No file found, creating kmers neighbors')
-        kmer_set_2 = create_kmer_set(X2_train[:,0], k, kmer_set={})
-        kmer_set_2 = create_kmer_set(X2_test[:,0], k, kmer_set_2)
-        neighbours_2 = get_neighbours(kmer_set_2, m)
-        
-        # Save neighbours and kmer set
-        pickle.dump([neighbours_2, kmer_set_2], open('neighbours_2'+str(k)+'_'+str(m)+'.p', 'wb'))
+    neighbours_0, kmer_set_0 = load_neighbors(0,k,m)
+    neighbours_1, kmer_set_1 = load_neighbors(1,k,m)
+    neighbours_2, kmer_set_2 = load_neighbors(2,k,m)
 
 #Shuffling
 if shuffle:
@@ -125,6 +99,11 @@ if shuffle:
     X2_train = X2_train[shuffling_2][:,0]
     X2_mat100_train = X2_mat100_train[shuffling_2]
     Y2_train = Y2_train[shuffling_2]
+
+else:
+    X0_train = X0_train[:,0]
+    X1_train = X1_train[:,0]
+    X2_train = X2_train[:,0]
 
 
 #Take a small fraction of the data for tests 
@@ -166,6 +145,32 @@ if cross_validate_0:
 
     print("Cross-validating on dataset 0...")
 
+    if kernel=='linear':
+        svm = SVM(kernel = LinearKernel(), C=C)
+    elif kernel=='rbf':
+        svm = SVM(kernel = GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False), C=C)
+    elif kernel=='poly':
+        svm = SVM(kernel = PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree), C=C)
+    elif kernel=='spectrum':
+        svm = SVM(kernel = SpectrumKernel(k=k), C=C)
+    elif kernel=='mismatch':
+        svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0,normalize=True), C=C)
+    elif kernel=='sum':
+        dataset_nbr = 0 
+        k = 15
+        m = 3
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        k = 12
+        m = 2
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        k = 5
+        m = 1
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_5 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_5], weights=[1.0, 1.0, 1.0]), C=C)
+
     val_accs_0 = []
 
     split = np.linspace(0,len(X0_mat100_train),num=k_fold+1).astype(int)
@@ -186,18 +191,7 @@ if cross_validate_0:
         Y0_train_,Y0_val_ = Y0_train[indices_train],Y0_train[indices_val]
 
         print('Doing SVM')
-
-        if kernel=='linear':
-            svm = SVM(kernel=LinearKernel(),C=C)
-        elif kernel=='rbf':
-            svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
-        elif kernel=='poly':
-            svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
-        elif kernel=='spectrum':
-            svm = SVM(kernel=SpectrumKernel(k=k),C=C)
-        elif kernel=='mismatch':
-            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0,normalize=True), C=C)
-
+        
         if kernel_on_matrices:
             svm.fit(X0_mat100_train_, Y0_train_)
             pred_train = svm.predict_classes(X0_mat100_train_)
@@ -211,7 +205,6 @@ if cross_validate_0:
         train_acc = np.sum(np.squeeze(pred_train)==np.squeeze(Y0_train_)) / len(Y0_train_)
         val_acc = np.sum(np.squeeze(pred_val)==np.squeeze(Y0_val_)) / len(Y0_val_)
 
-
         print("Accuracy on train:", train_acc)
         print("Accuracy on val:", val_acc)
         val_accs_0.append(val_acc.copy())
@@ -220,12 +213,37 @@ if cross_validate_0:
     print("Mean accuracy on val over the k folds (dataset 0):", np.mean(val_accs_0))
 
 
-## Dataset 1 ##
-
+## CROSS-VALIDATE ON DATASET 1 ##
 
 if cross_validate_1:
 
     print("Cross-validating on dataset 1...")
+
+    if kernel=='linear':
+        svm = SVM(kernel = LinearKernel(), C=C)
+    elif kernel=='rbf':
+        svm = SVM(kernel = GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False), C=C)
+    elif kernel=='poly':
+        svm = SVM(kernel = PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree), C=C)
+    elif kernel=='spectrum':
+        svm = SVM(kernel = SpectrumKernel(k=k), C=C)
+    elif kernel=='mismatch':
+        svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1,normalize=True), C=C)
+    elif kernel=='sum':
+        dataset_nbr = 1
+        k = 15
+        m = 3
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        k = 12
+        m = 2
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        k = 5
+        m = 1
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_5 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_5], weights=[1.0, 1.0, 1.0]), C=C)
 
     val_accs_1 = []
 
@@ -242,24 +260,12 @@ if cross_validate_1:
         indices_val = np.arange(len(X1_mat100_train))[split[i]:split[i+1]]
         indices_train = np.concatenate([np.arange(len(X1_mat100_train))[0:split[i]],np.arange(len(X1_mat100_train))[split[i+1]:]]) 
 
-        X1_mat100_train_,X1_mat100_val_ = X1_mat100_train[indices_train],X1_mat100_train[indices_val]
-        X1_train_,X1_val_ = X1_train[indices_train],X1_train[indices_val]
-        Y1_train_,Y1_val_ = Y1_train[indices_train],Y1_train[indices_val]
+        X1_mat100_train_,X1_mat100_val_ = X1_mat100_train[indices_train], X1_mat100_train[indices_val]
+        X1_train_,X1_val_ = X1_train[indices_train], X1_train[indices_val]
+        Y1_train_,Y1_val_ = Y1_train[indices_train], Y1_train[indices_val]
 
         print('Doing SVM')
-
-        if kernel=='linear':
-            svm = SVM(kernel=LinearKernel(),C=C)
-        elif kernel=='rbf':
-            svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
-        elif kernel=='poly':
-            svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
-        elif kernel=='spectrum':
-            svm = SVM(kernel=SpectrumKernel(k=k),C=C)
-        elif kernel=='mismatch':
-            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1,normalize=True), C=C)
-
-
+        
         if kernel_on_matrices:
             svm.fit(X1_mat100_train_, Y1_train_)
             pred_train = svm.predict_classes(X1_mat100_train_)
@@ -273,7 +279,6 @@ if cross_validate_1:
         train_acc = np.sum(np.squeeze(pred_train)==np.squeeze(Y1_train_)) / len(Y1_train_)
         val_acc = np.sum(np.squeeze(pred_val)==np.squeeze(Y1_val_)) / len(Y1_val_)
 
-
         print("Accuracy on train:", train_acc)
         print("Accuracy on val:", val_acc)
         val_accs_1.append(val_acc.copy())
@@ -282,11 +287,37 @@ if cross_validate_1:
     print("Mean accuracy on val over the k folds (dataset 1):", np.mean(val_accs_1))
 
 
-## Dataset 2 ##
+## CROSS-VALIDATE ON DATASET 2 ##
 
 if cross_validate_2:
 
     print("Cross-validating on dataset 2...")
+
+    if kernel=='linear':
+        svm = SVM(kernel = LinearKernel(), C=C)
+    elif kernel=='rbf':
+        svm = SVM(kernel = GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False), C=C)
+    elif kernel=='poly':
+        svm = SVM(kernel = PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree), C=C)
+    elif kernel=='spectrum':
+        svm = SVM(kernel = SpectrumKernel(k=k), C=C)
+    elif kernel=='mismatch':
+        svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2,normalize=True), C=C)
+    elif kernel=='sum':
+        dataset_nbr = 2
+        k = 15
+        m = 3
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        k = 12
+        m = 2
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        k = 5
+        m = 1
+        neighbours, kmer_set = load_neighbors(dataset_nbr, k, m)
+        kernel_5 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+        svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12, kernel_5], weights=[1.0, 1.0, 1.0]), C=C)
 
     val_accs_2 = []
 
@@ -308,18 +339,7 @@ if cross_validate_2:
         Y2_train_,Y2_val_ = Y2_train[indices_train],Y2_train[indices_val]
 
         print('Doing SVM')
-
-        if kernel=='linear':
-            svm = SVM(kernel=LinearKernel(),C=C)
-        elif kernel=='rbf':
-            svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
-        elif kernel=='poly':
-            svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
-        elif kernel=='spectrum':
-            svm = SVM(kernel=SpectrumKernel(k=k),C=C)
-        elif kernel=='mismatch':
-            svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2,normalize=True), C=C)
-
+        
         if kernel_on_matrices:
             svm.fit(X2_mat100_train_, Y2_train_)
             pred_train = svm.predict_classes(X2_mat100_train_)
@@ -333,13 +353,13 @@ if cross_validate_2:
         train_acc = np.sum(np.squeeze(pred_train)==np.squeeze(Y2_train_)) / len(Y2_train_)
         val_acc = np.sum(np.squeeze(pred_val)==np.squeeze(Y2_val_)) / len(Y2_val_)
 
-
         print("Accuracy on train:", train_acc)
         print("Accuracy on val:", val_acc)
         val_accs_2.append(val_acc.copy())
 
     print(val_accs_2)
     print("Mean accuracy on val over the k folds (dataset 2):", np.mean(val_accs_2))
+
 
 
 

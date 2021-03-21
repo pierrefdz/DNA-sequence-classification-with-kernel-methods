@@ -5,20 +5,20 @@ import pandas as pd
 import pickle
 from tqdm import tqdm
 
-from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel
+from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel, SumKernel
 from utils import create_kmer_set,m_neighbours,get_neighbours
 from classifiers.svm import SVM
 
 ## PARAMETERS ##
 
 
-kernel = 'mismatch' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
+kernel = 'sum' #'linear' 'rbf', 'poly', 'spectrum' ot 'mismatch' (unsure if 'spectrum' and 'mismatch' work perfectly)
 C = 1.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 1.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
-k = 12 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
-m = 2 #Parameter m for SVM (only for 'mismatch')
+k = 15 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
+m = 3 #Parameter m for SVM (only for 'mismatch')
 
 shuffle = True #Shuffle the data
 
@@ -155,6 +155,18 @@ elif kernel=='spectrum':
     svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 elif kernel=='mismatch':
     svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_0, kmer_set=kmer_set_0,normalize=True), C=C)
+elif kernel=='sum':
+    #Dataset0
+    k=15
+    m=3
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_0_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    print('Neighbors correctly loaded')
+    kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+    k = 12
+    m = 2
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_0_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12], weights=[1.0, 1.0]), C=C)
 
 if kernel_on_matrices:
     svm.fit(X0_mat100_train, Y0_train)
@@ -178,6 +190,18 @@ elif kernel=='spectrum':
     svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 elif kernel=='mismatch':
     svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_1, kmer_set=kmer_set_1,normalize=True), C=C)
+elif kernel=='sum':
+    #Dataset1
+    k=15
+    m=3
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_1_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    print('Neighbors correctly loaded')
+    kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+    k = 12
+    m = 2
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_1_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12], weights=[1.0, 0.5]), C=C)
 
 if kernel_on_matrices:
     svm.fit(X1_mat100_train, Y1_train)
@@ -202,6 +226,18 @@ elif kernel=='spectrum':
     svm = SVM(kernel=SpectrumKernel(k=k),C=C)
 elif kernel=='mismatch':
     svm = SVM(kernel=MismatchKernel(k=k, m=m, neighbours=neighbours_2, kmer_set=kmer_set_2,normalize=True), C=C)
+elif kernel=='sum':
+    #Dataset2
+    k=15
+    m=3
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_2_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    print('Neighbors correctly loaded')
+    kernel_15 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+    k = 12
+    m = 2
+    neighbours, kmer_set = pickle.load(open('saved_neighbors/neighbours_2_'+str(k)+'_'+str(m)+'.p', 'rb'))
+    kernel_12 = MismatchKernel(k=k, m=m, neighbours=neighbours, kmer_set=kmer_set, normalize = True)
+    svm = SVM(kernel=SumKernel(kernels=[kernel_15, kernel_12], weights=[1.0, 1.0]), C=C)
 
 if kernel_on_matrices:
     svm.fit(X2_mat100_train, Y2_train)
