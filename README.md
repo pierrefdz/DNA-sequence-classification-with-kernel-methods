@@ -7,4 +7,4 @@ In this challenge, we will work with three datasets corresponding to three diffe
 
 To generate a submission file, please start the script: `svm_generate_predictions.py`. Feel free to try different parameters by modifying the "parameters" section in the script. It is provided here with the parameters that gave our best submission. 
 
-Note that it may take a long time to compute the sum kernel. If you want to quickly have a very correct baseline, you can change to a mismatch kernel with k=12 and m=2.
+Note that it may take a long time to compute the sum kernel of our best submission (several hours). If you want to quickly have correct baselines, you can change to a mismatch kernel with k=10 and m=1 (very fast), or a mismatch kernel with k=12 and m=2 (around 15 minutes to compute the kernels).
