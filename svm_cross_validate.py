@@ -14,10 +14,10 @@ from classifiers.svm import SVM
 kernel = 'sum' #'linear' 'rbf', 'poly', 'spectrum', 'mismatch' or 'sum'
 C = 5.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
-coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
+coef0 = 1.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
-k = 10 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
-m = 1 #Parameter m for SVM (only for 'mismatch')
+k = 12 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
+m = 2 #Parameter m for SVM (only for 'mismatch')
 list_k = [8,12] #List of parameters k for sum of mismatch kernels (only for 'sum')
 list_m = [1,2] #List of parameters m for sum of mismatch kernels (only for 'sum')
 weights = [1.0,1.0] #List of weights for sum of mismatch kernels (only for 'sum')

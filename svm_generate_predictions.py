@@ -16,8 +16,8 @@ C = 5.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 1.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
-k = 15 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
-m = 3 #Parameter m for SVM (only for 'mismatch')
+k = 12 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
+m = 2 #Parameter m for SVM (only for 'mismatch')
 list_k = [5,8,10,12,13,15] #List of parameters k for sum of mismatch kernels (only for 'sum')
 list_m = [1,1,1,2,2,3] #List of parameters m for sum of mismatch kernels (only for 'sum')
 weights = [1.0,1.0,1.0,1.0,1.0,1.0] #List of weights for sum of mismatch kernels (only for 'sum')
@@ -219,4 +219,4 @@ print(pred.shape)
 print(pred)
 pred_df['Bound'] = pred
 pred_df.index.name = 'Id'
-pred_df.to_csv('pred.csv', sep=',', header=True)
+pred_df.to_csv('Yte.csv', sep=',', header=True)
