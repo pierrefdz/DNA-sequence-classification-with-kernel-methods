@@ -18,9 +18,9 @@ coef0 = 10.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
 k = 10 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
 m = 1 #Parameter m for SVM (only for 'mismatch')
-list_k = [8,12,15] #List of parameters k for sum of mismatch kernels (only for 'sum')
-list_m = [1,2,3] #List of parameters m for sum of mismatch kernels (only for 'sum')
-weights = [1.0,1.0,1.0] #List of weights for sum of mismatch kernels (only for 'sum')
+list_k = [8,12] #List of parameters k for sum of mismatch kernels (only for 'sum')
+list_m = [1,2] #List of parameters m for sum of mismatch kernels (only for 'sum')
+weights = [1.0,1.0] #List of weights for sum of mismatch kernels (only for 'sum')
 
 shuffle = False #Shuffle the data
 k_fold = 5 #Number of folds for cross_validation
@@ -43,21 +43,10 @@ X0_mat100_train = pd.read_csv("data/Xtr0_mat100.csv", sep=" ", header=None).valu
 X1_mat100_train = pd.read_csv("data/Xtr1_mat100.csv", sep=" ", header=None).values
 X2_mat100_train = pd.read_csv("data/Xtr2_mat100.csv", sep=" ", header=None).values
 
-# shape (2000,1): string
-X0_test = pd.read_csv("data/Xte0.csv", sep=",", index_col=0).values
-X1_test = pd.read_csv("data/Xte1.csv", sep=",", index_col=0).values
-X2_test = pd.read_csv("data/Xte2.csv", sep=",", index_col=0).values
-
-# shape (2000,100): float
-X0_mat100_test = pd.read_csv("data/Xte0_mat100.csv", sep=" ", header=None).values
-X1_mat100_test = pd.read_csv("data/Xte1_mat100.csv", sep=" ", header=None).values
-X2_mat100_test = pd.read_csv("data/Xte2_mat100.csv", sep=" ", header=None).values
-
 # shape (2000,1): 0 or 1
 Y0_train = pd.read_csv("data/Ytr0.csv", sep=",", index_col=0).values
 Y1_train = pd.read_csv("data/Ytr1.csv", sep=",", index_col=0).values
 Y2_train = pd.read_csv("data/Ytr2.csv", sep=",", index_col=0).values
-
 
 ##### PREPROCESS DATA #####
 
