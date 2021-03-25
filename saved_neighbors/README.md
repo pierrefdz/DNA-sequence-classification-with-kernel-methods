@@ -1,0 +1,1 @@
+This folder will contain the pre-computed neighbours for the mismatch kernel (they will be directly loaded to save time).
