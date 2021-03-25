@@ -2,22 +2,19 @@
 Sandbox file to try things messily 
 """
 
-# %% Imports
+# Imports
 import numpy as np
 import pandas as pd
 import pickle
 from tqdm import tqdm
 
-from sklearn.kernel_ridge import KernelRidge
-from sklearn.svm import SVC
-
 from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKernel, MismatchKernel
-
 from classifiers.logistic_regression import LogisticRegression
 from classifiers.ridge_regression import RidgeRegression
 from classifiers.svm import SVM
 
-# %% Read csv files
+# Read csv files
+
 # shape (2000,1): string
 X0_train = pd.read_csv("data/Xtr0.csv", sep=",", index_col=0).values
 X1_train = pd.read_csv("data/Xtr1.csv", sep=",", index_col=0).values
@@ -51,11 +48,6 @@ ridge = RidgeRegression(kernel=kernel, alpha=0.01)
 ridge.fit(X0_mat100_train, Y0_train)
 # %%
 ridge.predict(X0_mat100_train)
-
-# KRR with sklearn
-# ridge = KernelRidge(alpha=0.001, kernel='linear')
-# ridge.fit(X0_mat100_train, Y0_train2)
-# ridge.predict(X0_mat100_train)
 
 # Kernel logistic regression
 # logreg = LogisticRegression(kernel=kernel, lambda_=0.01)
@@ -118,96 +110,10 @@ print(np.sum(Y_val== 1), "positive")
 print(np.sum(Y_val==-1), "negative")
 print()
 
-compare_both_svms = False
-test_scikit_svm = False
+
 test_our_svm = False
-grid_search_SVM = False
 test_spectrum = False
 test_mismatch = True
-
-
-if compare_both_svms:
-
-    ## Compare the results of SKlearn SVM and ours
-
-    #Parameters
-    kernel = 'poly' # 'linear' 'rbf' or 'poly'
-    C = 1.0
-    gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
-    coef0 = 1.0
-    degree = 3
-
-    print("Kernel:", kernel)
-    print("C:", C)
-    if kernel != 'linear':
-        print("Gamma:", gamma)
-    if kernel == 'poly':
-        print("Coef0:", coef0)
-        print("Degree:", degree)
-    print()
-
-    #Sklearn SVM
-    print("Applying Sklearn SVM...")
-    svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma,coef0=coef0,degree=degree)
-    svm_scikit.fit(X_mat_train, np.squeeze(Y_train))
-    svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
-    svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
-
-    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
-    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
-    print()
-
-    #Our SVM
-    print("Applying our SVM...")
-    if kernel=='linear':
-        our_svm = SVM(kernel=LinearKernel(),C=C)
-    elif kernel=='rbf':
-        our_svm = SVM(kernel=GaussianKernel(sigma=np.sqrt(0.5/gamma),normalize=False),C=C)
-    elif kernel=='poly':
-        our_svm = SVM(kernel=PolynomialKernel(gamma=gamma,coef0=coef0,degree=degree),C=C)
-    our_svm.fit(X_mat_train, Y_train)
-    our_svm_classes_train = our_svm.predict_classes(X_mat_train)
-    our_svm_classes_val = our_svm.predict_classes(X_mat_val)
-
-    print("Accuracy on train (our SVM):", np.sum(np.squeeze(our_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))    
-    print("Accuracy on val (our SVM):", np.sum(np.squeeze(our_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
-    print()
-
-    #Comparison
-    print("Similarity on train between sklearn SVM and our SVM:",np.sum(np.squeeze(our_svm_classes_train)==np.squeeze(svm_scikit_classes_train))/len(Y_train))
-    print("Similarity on val between sklearn SVM and our SVM:",np.sum(np.squeeze(our_svm_classes_val)==np.squeeze(svm_scikit_classes_val))/len(Y_val))
-    print()
-
-
-if test_scikit_svm:
-
-    ## Test SKLearn SVM
-
-    #Parameters
-    kernel = 'poly' # 'linear' 'rbf' or 'poly'
-    C = 1.0
-    gamma = 1/(X_mat_train.shape[1] * X_mat_train.var())
-    coef0 = 1.0
-    degree = 3
-
-    print("Kernel:", kernel)
-    print("C:", C)
-    if kernel != 'linear':
-        print("Gamma:", gamma)
-    if kernel == 'poly':
-        print("Coef0:", coef0)
-        print("Degree:", degree)
-    print()
-
-    #Sklearn SVM
-    print("Applying Sklearn SVM...")
-    svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma,coef0=coef0,degree=degree)
-    svm_scikit.fit(X_mat_train, np.squeeze(Y_train))
-    svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
-    svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
-
-    print("Accuracy on train (sklearn SVM):", np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train))
-    print("Accuracy on val (sklearn SVM):", np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val))
 
 if test_our_svm:
 
@@ -243,79 +149,6 @@ if test_our_svm:
 
     print("Accuracy on train (our SVM):", np.sum(np.squeeze(our_svm_classes_train)==np.squeeze(Y_train))/len(Y_train))    
     print("Accuracy on val (our SVM):", np.sum(np.squeeze(our_svm_classes_val)==np.squeeze(Y_val))/len(Y_val))
-
-
-
-if grid_search_SVM:
-
-    ## Grid search to find the best parameters for the SVM, using the SKLearn implementation
-
-    max_val_acc = 0
-    max_C = 0
-    max_gamma = 0
-
-    kernels = ['linear','rbf','poly']
-    Cs = [10**i for i in range(-2,4)]
-    gammas = [10**i for i in range(0,4)]
-    coef0s = [1.0]
-    degrees = [2,3,4,5]
-
-    for kernel in kernels:
-        for C in Cs:
-            for gamma in gammas:
-                for coef0 in coef0s:
-                    for degree in degrees:
-
-                        print("Kernel:", kernel)
-                        print("C:", C)
-                        if kernel != 'linear':
-                            print("Gamma:", gamma)
-                        if kernel == 'poly':
-                            print("Coef0:", coef0)
-                            print("Degree:", degree)
-                        print()
-
-                        try:
-
-                            #Sklearn SVM
-                            print("Applying Sklearn SVM...")
-                            svm_scikit = SVC(C=C,kernel=kernel,gamma=gamma,coef0=coef0,degree=degree)
-                            svm_scikit.fit(X_mat_train, np.squeeze(Y_train))
-                            svm_scikit_classes_train = svm_scikit.predict(X_mat_train)
-                            svm_scikit_classes_val = svm_scikit.predict(X_mat_val)
-
-                            acc_train = np.sum(svm_scikit_classes_train==np.squeeze(Y_train))/len(Y_train)
-                            acc_val = np.sum(svm_scikit_classes_val==np.squeeze(Y_val))/len(Y_val)
-
-                            print("Accuracy on train (sklearn SVM):", acc_train)
-                            print("Accuracy on val (sklearn SVM):", acc_val)
-                            print()
-
-                            if acc_val > max_val_acc:
-                                max_val_acc = acc_val
-                                max_C = C
-                                max_gamma = gamma
-                                max_kernel = kernel
-                                max_degree = degree
-                                max_coef0 = coef0
-                        
-                        except:
-                            print("Error when applying SVM. Resume with next parameters...")
-                            print()
-
-                        if kernel!='poly':
-                            break
-                    if kernel!='poly':
-                        break
-                if kernel == 'linear':
-                    break
-
-    print("Best val acc:",max_val_acc)
-    print("Best kernel:",kernel)
-    print("Best C:",max_C)
-    print("Best gamma:", max_gamma)
-    print("Best degree:", max_degree)
-    print("Best coef0:", max_coef0)
 
 
 if test_spectrum:
@@ -434,14 +267,6 @@ if test_mismatch:
     pred_val = svm.predict_classes(X0_val[:,0])
     # pred = np.where(pred == -1, 0, 1)
     print( np.sum(np.squeeze(pred_val)==np.squeeze(Y0_val)) / len(Y0_val) )
-
-    # Create submission file
-    # pred = svm.predict_classes(X_test[:,0])
-    # pred = np.where(pred == -1, 0, 1)
-    # pred_df = pd.DataFrame()
-    # pred_df['Bound'] = pred[0]
-    # pred_df.index.name = 'Id'
-#     pred_df.to_csv('pred.csv', sep=',', header=True)
     
     
     

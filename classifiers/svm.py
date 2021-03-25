@@ -17,7 +17,7 @@ class SVM():
         """
         kernel: Which kernel to use
         C: float > 0, default=1.0, regularization parameter
-        tol_support_vectors: Threshold to consider vectors as support vectors
+        tol_support_vectors: Threshold for alpha value to consider vectors as support vectors
         """
         self.kernel = kernel
         self.C = C
@@ -33,38 +33,21 @@ class SVM():
 
         #Define the optimization problem to solve
 
-        #P = (y @ y.T) * self.X_train_gram
-        #q = -np.ones(n_samples)
-        #G = np.block([[np.eye(n_samples)],[-np.eye(n_samples)]])
-        #h = np.concatenate((self.C*np.ones(n_samples),np.zeros(n_samples)))
-
         P = self.X_train_gram
         q = -y.astype('float')
         G = np.block([[np.diag(np.squeeze(y).astype('float'))],[-np.diag(np.squeeze(y).astype('float'))]])
         h = np.concatenate((self.C*np.ones(n_samples),np.zeros(n_samples)))
 
         #Solve the problem
-        
         #With cvxopt
+
         P=matrix(P)
         q=matrix(q)
         G=matrix(G)
         h=matrix(h)
         solver = cvxopt.solvers.qp(P=P,q=q,G=G,h=h)
         x = solver['x']
-        #self.alphas = np.squeeze(y)*np.squeeze(np.array(x))
         self.alphas = np.squeeze(np.array(x))
-        
-        """
-        #With cvxpy
-        x = cp.Variable(n_samples)
-        objective = cp.Minimize((cp.quad_form(x, P) + 2 * q.T @ x))
-        constraints = [G @ x <= h]
-        prob = cp.Problem(objective,constraints)
-        prob.solve()
-        print(x.value)
-        self.alphas = np.squeeze(y)*np.array(x.value)
-        """
 
         #Retrieve the support vectors
         self.support_vectors_indices = np.squeeze(np.abs(np.array(x))) > self.tol_support_vectors

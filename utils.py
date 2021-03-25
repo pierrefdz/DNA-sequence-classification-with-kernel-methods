@@ -70,3 +70,36 @@ def load_neighbors(dataset, k, m):
     neighbours, kmer_set = pickle.load(open('saved_neighbors/'+file_name, 'rb'))
     print('Neighbors correctly loaded!')
     return neighbours, kmer_set
+
+
+def load_or_compute_neighbors(dataset,k,m):
+    """
+    dataset: 0, 1 or 2\\
+    k: len of the kmers
+    m: number of possible mismatches
+    """
+    
+    try:
+        #Load the neighbors
+        neighbours, kmer_set = load_neighbors(dataset, k, m)
+    except:
+        print('No file found, creating kmers neighbors')
+        #Compute the neighbors
+        file_name = 'neighbours_'+str(dataset)+'_'+str(k)+'_'+str(m)+'.p'
+        if dataset==0:
+            kmer_set = create_kmer_set(X0_train[:,0], k, kmer_set={})
+            kmer_set = create_kmer_set(X0_test[:,0], k, kmer_set)
+            neighbours = get_neighbours(kmer_set, m)
+            pickle.dump([neighbours, kmer_set], open('saved_neighbors/'+file_name, 'wb'))
+        elif dataset==1:
+            kmer_set = create_kmer_set(X1_train[:,0], k, kmer_set={})
+            kmer_set = create_kmer_set(X1_test[:,0], k, kmer_set)
+            neighbours = get_neighbours(kmer_set, m)
+            pickle.dump([neighbours, kmer_set], open('saved_neighbors/'+file_name, 'wb'))
+        elif dataset==2:
+            kmer_set = create_kmer_set(X2_train[:,0], k, kmer_set={})
+            kmer_set = create_kmer_set(X2_test[:,0], k, kmer_set)
+            neighbours = get_neighbours(kmer_set, m)
+            pickle.dump([neighbours, kmer_set], open('saved_neighbors/'+file_name, 'wb'))
+            
+    return neighbours, kmer_set

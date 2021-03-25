@@ -2,8 +2,6 @@ import numpy as np
 import scipy.sparse as sparse
 from tqdm import tqdm
 
-from tqdm import tqdm
-
 class Kernel():
     """ Abstract Kernel class"""
 
@@ -124,7 +122,7 @@ class MismatchKernel(Kernel):
         super().__init__()
         self.k = k
         self.m = m
-        self.kmer_set = kmer_set
+        self.kmer_set = kmer_set #kmer_set and neighbours have to be pre-computed (to save computational time when running multiple experiments)
         self.neighbours = neighbours
         self.normalize = normalize
 
