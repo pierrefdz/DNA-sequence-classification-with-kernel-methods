@@ -1,9 +1,3 @@
-# GitHubs:
-https://github.com/francisanokye/DNA-Classification-Challenge-With-Kernel-Methods-AMMI-2020
-https://github.com/rmenegaux/kernels-AMMI-2020/tree/master/data-challenge
-https://github.com/omarfoq/Kernel_Methods_for_Machine_Learning
-https://github.com/PirashanthR/Kernel-Methods-For-Machine-Learning-MVA-Challenge
-
 # Kaggle link
 https://www.kaggle.com/c/machine-learning-with-kernel-methods-2021/overview
 
