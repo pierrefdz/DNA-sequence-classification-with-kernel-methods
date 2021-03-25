@@ -87,16 +87,22 @@ def load_or_compute_neighbors(dataset,k,m):
         #Compute the neighbors
         file_name = 'neighbours_'+str(dataset)+'_'+str(k)+'_'+str(m)+'.p'
         if dataset==0:
+            X0_train = pd.read_csv("data/Xtr0.csv", sep=",", index_col=0).values
+            X0_test = pd.read_csv("data/Xte0.csv", sep=",", index_col=0).values
             kmer_set = create_kmer_set(X0_train[:,0], k, kmer_set={})
             kmer_set = create_kmer_set(X0_test[:,0], k, kmer_set)
             neighbours = get_neighbours(kmer_set, m)
             pickle.dump([neighbours, kmer_set], open('saved_neighbors/'+file_name, 'wb'))
         elif dataset==1:
+            X1_train = pd.read_csv("data/Xtr1.csv", sep=",", index_col=0).values
+            X1_test = pd.read_csv("data/Xte1.csv", sep=",", index_col=0).values
             kmer_set = create_kmer_set(X1_train[:,0], k, kmer_set={})
             kmer_set = create_kmer_set(X1_test[:,0], k, kmer_set)
             neighbours = get_neighbours(kmer_set, m)
             pickle.dump([neighbours, kmer_set], open('saved_neighbors/'+file_name, 'wb'))
         elif dataset==2:
+            X2_train = pd.read_csv("data/Xtr2.csv", sep=",", index_col=0).values
+            X2_test = pd.read_csv("data/Xte2.csv", sep=",", index_col=0).values
             kmer_set = create_kmer_set(X2_train[:,0], k, kmer_set={})
             kmer_set = create_kmer_set(X2_test[:,0], k, kmer_set)
             neighbours = get_neighbours(kmer_set, m)

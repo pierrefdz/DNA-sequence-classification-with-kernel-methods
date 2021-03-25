@@ -1,4 +1,4 @@
-## IMPORTS ##
+##### IMPORTS #####
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKern
 from utils import create_kmer_set,m_neighbours,get_neighbours,load_neighbors,load_or_compute_neighbors
 from classifiers.svm import SVM
 
-## PARAMETERS ##
+##### PARAMETERS #####
 
 kernel = 'sum' #'linear' 'rbf', 'poly', 'spectrum', 'mismatch' or 'sum'
 C = 5.0 #Parameter C for SVM
@@ -31,7 +31,7 @@ cross_validate_2 = True #Choose to cross_validate on dataset 2 or not
 
 test_on_little_data = False #Test on little data. /!\ Before running real tests, make sure this is set to "False"
 
-## LOAD DATA ##
+##### LOAD DATA #####
 
 # shape (2000,1): string
 X0_train = pd.read_csv("data/Xtr0.csv", sep=",", index_col=0).values
@@ -59,7 +59,7 @@ Y1_train = pd.read_csv("data/Ytr1.csv", sep=",", index_col=0).values
 Y2_train = pd.read_csv("data/Ytr2.csv", sep=",", index_col=0).values
 
 
-## PREPROCESS DATA ##
+##### PREPROCESS DATA #####
 
 #Rescaling labels
 Y0_train = np.where(Y0_train == 0, -1, 1)
@@ -122,7 +122,7 @@ if test_on_little_data:
 #Check if the kernel applies on matrices or strings
 kernel_on_matrices = (kernel=='linear' or kernel=='rbf' or kernel=='poly')
 
-## PRINT CONFIGURATION ##
+##### PRINT CONFIGURATION #####
 
 print("Kernel:", kernel)
 print("C:", C)
@@ -135,9 +135,13 @@ if kernel== 'spectrum' or kernel == 'mismatch':
     print("K:",k)
 if kernel == 'mismatch':
     print("M:",m)
+if kernel == 'sum':
+    print("List of Ks:",list_k)
+    print("List of Ms:",list_m)
+    print("Weights:", weights)
 print()
 
-## CROSS-VALIDATE ON DATASET 0 ##
+##### CROSS-VALIDATE ON DATASET 0 #####
 
 if cross_validate_0:
 
@@ -203,7 +207,7 @@ if cross_validate_0:
     print("Mean accuracy on val over the k folds (dataset 0):", np.mean(val_accs_0))
 
 
-## CROSS-VALIDATE ON DATASET 1 ##
+##### CROSS-VALIDATE ON DATASET 1 #####
 
 if cross_validate_1:
 
@@ -269,7 +273,7 @@ if cross_validate_1:
     print("Mean accuracy on val over the k folds (dataset 1):", np.mean(val_accs_1))
 
 
-## CROSS-VALIDATE ON DATASET 2 ##
+##### CROSS-VALIDATE ON DATASET 2 #####
 
 if cross_validate_2:
 

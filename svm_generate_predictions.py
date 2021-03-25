@@ -1,4 +1,4 @@
-## IMPORTS ##
+##### IMPORTS #####
 
 import numpy as np
 import pandas as pd
@@ -9,22 +9,22 @@ from kernels import LinearKernel, GaussianKernel, PolynomialKernel, SpectrumKern
 from utils import create_kmer_set,m_neighbours,get_neighbours,load_neighbors,load_or_compute_neighbors
 from classifiers.svm import SVM
 
-## PARAMETERS ##
+##### PARAMETERS #####
 
 kernel = 'sum' #'linear' 'rbf', 'poly', 'spectrum', 'mismatch' or 'sum'
-C = 1.0 #Parameter C for SVM
+C = 5.0 #Parameter C for SVM
 gamma = 10.0 #Parameter gamma for SVM (only for 'rbf' or 'poly')
 coef0 = 1.0 #Parameter coef0 for SVM (only for 'poly')
 degree = 3 #Parameter degree for SVM (only for 'poly')
 k = 15 #Parameter k for SVM (only for 'spectrum' and 'mismatch')
 m = 3 #Parameter m for SVM (only for 'mismatch')
-list_k = [8,12,15] #List of parameters k for sum of mismatch kernels (only for 'sum')
-list_m = [1,2,3] #List of parameters m for sum of mismatch kernels (only for 'sum')
-weights = [1.0,1.0,1.0] #List of weights for sum of mismatch kernels (only for 'sum')
+list_k = [5,8,10,12,13,15] #List of parameters k for sum of mismatch kernels (only for 'sum')
+list_m = [1,1,1,2,2,3] #List of parameters m for sum of mismatch kernels (only for 'sum')
+weights = [1.0,1.0,1.0,1.0,1.0,1.0] #List of weights for sum of mismatch kernels (only for 'sum')
 
 shuffle = True #Shuffle the data
 
-## LOAD DATA ##
+##### LOAD DATA #####
 
 # shape (2000,1): string
 X0_train = pd.read_csv("data/Xtr0.csv", sep=",", index_col=0).values
@@ -52,7 +52,7 @@ Y1_train = pd.read_csv("data/Ytr1.csv", sep=",", index_col=0).values
 Y2_train = pd.read_csv("data/Ytr2.csv", sep=",", index_col=0).values
 
 
-## PREPROCESS DATA ##
+##### PREPROCESS DATA #####
 
 #Rescaling labels
 Y0_train = np.where(Y0_train == 0, -1, 1)
@@ -113,9 +113,13 @@ if kernel == 'poly':
     print("Degree:", degree)
 if kernel== 'spectrum':
     print("K:",k)
+if kernel == 'sum':
+    print("List of Ks:",list_k)
+    print("List of Ms:",list_m)
+    print("Weights:", weights)
 print()
 
-## APPLY SVM ON DATASET 0 ##
+##### APPLY SVM ON DATASET 0 #####
 
 print("Applying SVM on dataset 0...")
 
@@ -145,7 +149,7 @@ else:
     svm.fit(X0_train, Y0_train)
     pred_0 = svm.predict_classes(X0_test)
 
-## APPLY SVM ON DATASET 1 ##
+##### APPLY SVM ON DATASET 1 #####
 
 print("Applying SVM on dataset 1...")
 
@@ -176,7 +180,7 @@ else:
     pred_1 = svm.predict_classes(X1_test)
 
 
-## APPLY SVM ON DATASET 2 ##
+##### APPLY SVM ON DATASET 2 #####
 
 print("Applying SVM on dataset 2...")
 
@@ -206,7 +210,7 @@ else:
     svm.fit(X2_train, Y2_train)
     pred_2 = svm.predict_classes(X2_test)
 
-## CREATE SUBMISSION FILE ##
+##### CREATE SUBMISSION FILE #####
 
 pred = np.concatenate([pred_0.squeeze(),pred_1.squeeze(),pred_2.squeeze()])
 pred = np.where(pred == -1, 0, 1)
